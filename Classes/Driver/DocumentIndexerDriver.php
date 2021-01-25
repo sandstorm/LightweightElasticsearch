@@ -21,8 +21,19 @@ use Neos\ContentRepository\Domain\Model\NodeInterface;
 use Neos\ContentRepository\Search\Indexer\NodeIndexerInterface;
 use Neos\Flow\Annotations as Flow;
 use Neos\Flow\Log\Utility\LogEnvironment;
+use Sandstorm\LightweightElasticsearch\Indexer\DocumentNodeIndexer;
 
 /**
+ * This is an "implementation detail class" to {@see DocumentNodeIndexer}. Please start reading this class first, before
+ * coming back here.
+ *
+ * This class implements a WORKAROUND: We did not want to replace {@see NodeIndexer::indexNode} completely; but wanted to
+ * do a SINGLE elasticsearch request for the contents and the fulltext.
+ *
+ * That's why we have created our own DocumentIndexerDriver here. We expect that {@see DocumentIndexerDriver::document()}
+ * and then {@see DocumentIndexerDriver::fulltext()} is called **directly afterwards**. We rely on this ordering
+ * to index document and fulltext in a single Elasticsearch call.
+ *
  * @Flow\Scope("singleton")
  */
 class DocumentIndexerDriver extends AbstractIndexerDriver implements IndexerDriverInterface
@@ -42,7 +53,8 @@ class DocumentIndexerDriver extends AbstractIndexerDriver implements IndexerDriv
         //
         // we only want to create a single bulk request with all data
 
-        // workspaceName might have been overridden
+        // workspaceName might have been overridden in $documentData; so we need to store it back in the $document
+        // before remembering it in $this->tempStorage;
         $document->setData($documentData);
 
         $this->tempStorage->attach($node, ['doc' => $document, 'index' => $indexName]);

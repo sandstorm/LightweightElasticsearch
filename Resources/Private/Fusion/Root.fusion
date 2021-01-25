@@ -1,0 +1,11 @@
+prototype(Flowpack.Listable:PaginatedCollection) {
+    renderer.@context.data.collection.lightweightElasticsearch {
+        @position = "start"
+
+        condition = ${Type.instance(props.collection, 'Sandstorm\LightweightElasticsearch\Query\SearchRequestBuilder')}
+        renderer = ${props.collection}
+        renderer.@process.limit = ${value.size(props.itemsPerPage)}
+        renderer.@process.offset = ${value.from(offset)}
+        renderer.@process.execute = ${value.execute()}
+    }
+}
