@@ -49,5 +49,9 @@ class DocumentNodeIndexer extends NodeIndexer
                 $this->extractFulltext($node, $propertyName, $propertyConfiguration['search']['fulltextExtractor'], $fulltextData);
             }
         }
+
+        foreach ($node->getChildNodes('Neos.Neos:Content,Neos.Neos:ContentCollection') as $childNode) {
+            $this->enrichWithFulltextForContentNodes($childNode, $fulltextData);
+        }
     }
 }
