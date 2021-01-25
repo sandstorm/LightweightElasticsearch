@@ -1,0 +1,6 @@
+Neos\ContentRepository\Search\Indexer\NodeIndexerInterface:
+  className: 'Sandstorm\LightweightElasticsearch\Indexer\DocumentNodeIndexer'
+
+
+Flowpack\ElasticSearch\ContentRepositoryAdaptor\Driver\IndexerDriverInterface:
+  className: 'Sandstorm\LightweightElasticsearch\Driver\DocumentIndexerDriver'

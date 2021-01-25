@@ -3,7 +3,8 @@
     "type": "neos-package",
     "name": "sandstorm/lightweightelasticsearch",
     "require": {
-        "neos/flow": "*"
+        "neos/flow": "*",
+        "flowpack/elasticsearch-contentrepositoryadaptor": "*"
     },
     "autoload": {
         "psr-4": {
