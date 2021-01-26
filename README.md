@@ -40,24 +40,46 @@ The project has the following goals and limitations:
 
   We only support Elasticsearch 7 right now.
 
+## Starting Elasticsearch for development
+
+```bash
+docker run --rm --name neos7-es -p 9200:9200 -p 9300:9300 -e "discovery.type=single-node" docker.elastic.co/elasticsearch/elasticsearch:7.10.2
+```
+
 ## Indexing
 
-You can use `./flow nodeindex:build` as usual for triggering the indexing process. **NOTE:** Only nodes
-which are marked as `search.fulltext.isRoot` in the corresponding `NodeTypes.yaml` will become part of the
-search index, and all their children Content nodes' texts will be indexed as part of this.
+The following commands are needed for indexing:
+
+```bash
+./flow nodeindex:build
+./flow nodeindex:cleanup
+```
+
+**NOTE:** Only nodes which are marked as `search.fulltext.isRoot` in the corresponding `NodeTypes.yaml`
+will become part of the search index, and all their children Content nodes' texts will be indexed as part of this.
 
 **Under the Covers**
 
 - The different indexing strategy is implemented using a custom `DocumentNodeIndexer`, which then calls a custom
-  `DocumentIndexerDriver`
+  `DocumentIndexerDriver`.
+
+As an example, you can then query the Elasticsearch index using:
+
+```bash
+curl -X GET "localhost:9200/neoscr/_search?pretty" -H 'Content-Type: application/json' -d'
+{
+    "query": {
+        "match_all": {}
+    }
+}
+'
+```
 
 ## Querying
 
 
 
 
-docker run --name neos7-es -p 9200:9200 -p 9300:9300 -e "discovery.type=single-node"
-docker.elastic.co/elasticsearch/elasticsearch:7.10.2
 
 - only batch indexing
 - only document nodes end up in the index

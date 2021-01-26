@@ -1,5 +1,5 @@
 <?php
-namespace Sandstorm\LightweightElasticsearch\Custom;
+namespace Sandstorm\LightweightElasticsearch\CustomIndexing;
 
 use Neos\Flow\Annotations as Flow;
 use Flowpack\ElasticSearch\ContentRepositoryAdaptor\Driver\IndexDriverInterface;

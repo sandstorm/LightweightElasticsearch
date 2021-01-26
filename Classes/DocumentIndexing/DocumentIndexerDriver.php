@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Sandstorm\LightweightElasticsearch\Driver;
+namespace Sandstorm\LightweightElasticsearch\DocumentIndexing;
 
 /*
  * This file is part of the Flowpack.ElasticSearch.ContentRepositoryAdaptor package.
@@ -21,7 +21,7 @@ use Neos\ContentRepository\Domain\Model\NodeInterface;
 use Neos\ContentRepository\Search\Indexer\NodeIndexerInterface;
 use Neos\Flow\Annotations as Flow;
 use Neos\Flow\Log\Utility\LogEnvironment;
-use Sandstorm\LightweightElasticsearch\Indexer\DocumentNodeIndexer;
+use Sandstorm\LightweightElasticsearch\DocumentIndexing\DocumentNodeIndexer;
 
 /**
  * This is an "implementation detail class" to {@see DocumentNodeIndexer}. Please start reading this class first, before
@@ -74,6 +74,7 @@ class DocumentIndexerDriver extends AbstractIndexerDriver implements IndexerDriv
         $indexName = $documentAndIndex['index'];
         assert($document instanceof ElasticSearchDocument);
         $this->tempStorage->offsetUnset($node);
+        var_dump("FULLTEXT");
 
         return [
             [

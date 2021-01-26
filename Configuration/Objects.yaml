@@ -1,6 +1,19 @@
 Neos\ContentRepository\Search\Indexer\NodeIndexerInterface:
-  className: 'Sandstorm\LightweightElasticsearch\Indexer\DocumentNodeIndexer'
+  className: 'Sandstorm\LightweightElasticsearch\DocumentIndexing\DocumentNodeIndexer'
 
+# WORKAROUND: the NodeIndexCommandController::nodeIndexer is types as "NodeIndexer" and not
+# as the interface; so we need to ensure our overridden DocumentNodeIndexer is injected here.
+Flowpack\ElasticSearch\ContentRepositoryAdaptor\Command\NodeIndexCommandController:
+  properties:
+    nodeIndexer:
+      object: 'Neos\ContentRepository\Search\Indexer\NodeIndexerInterface'
+
+# WORKAROUND: the NodeIndexMappingCommandController::nodeIndexer is types as "NodeIndexer" and not
+# as the interface; so we need to ensure our overridden DocumentNodeIndexer is injected here.
+Flowpack\ElasticSearch\ContentRepositoryAdaptor\Command\NodeIndexMappingCommandController:
+  properties:
+    nodeIndexer:
+      object: 'Neos\ContentRepository\Search\Indexer\NodeIndexerInterface'
 
 Flowpack\ElasticSearch\ContentRepositoryAdaptor\Driver\IndexerDriverInterface:
-  className: 'Sandstorm\LightweightElasticsearch\Driver\DocumentIndexerDriver'
+  className: 'Sandstorm\LightweightElasticsearch\DocumentIndexing\DocumentIndexerDriver'

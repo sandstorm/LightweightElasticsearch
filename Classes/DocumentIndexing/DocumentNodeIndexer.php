@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Sandstorm\LightweightElasticsearch\Indexer;
+namespace Sandstorm\LightweightElasticsearch\DocumentIndexing;
 
 /*
  * This file is part of the Sandstorm.LightweightElasticsearch package.
@@ -11,7 +11,7 @@ use Flowpack\ElasticSearch\ContentRepositoryAdaptor\Indexer\NodeIndexer;
 use Neos\ContentRepository\Domain\Model\NodeInterface;
 use Neos\Flow\Annotations as Flow;
 use Neos\Flow\Mvc\Controller\ActionController;
-use Sandstorm\LightweightElasticsearch\Driver\DocumentIndexerDriver;
+use Sandstorm\LightweightElasticsearch\DocumentIndexing\DocumentIndexerDriver;
 
 /**
  * The DocumentNodeIndexer indexes **only nodes marked as fulltext root** (i.e. only document nodes
@@ -26,6 +26,10 @@ use Sandstorm\LightweightElasticsearch\Driver\DocumentIndexerDriver;
 class DocumentNodeIndexer extends NodeIndexer
 {
 
+    public function setIndexNamePostfix(string $indexNamePostfix): void {
+        parent::setIndexNamePostfix($indexNamePostfix);
+    }
+
     /**
      * @return void
      */
@@ -36,6 +40,7 @@ class DocumentNodeIndexer extends NodeIndexer
         if (!self::isFulltextRoot($node)) {
             return;
         }
+
         parent::indexNode($node, $targetWorkspaceName);
     }
 
@@ -52,6 +57,10 @@ class DocumentNodeIndexer extends NodeIndexer
 
     protected function enrichWithFulltextForContentNodes(NodeInterface $node, array &$fulltextData): void
     {
+        if (self::isFulltextRoot($node)) {
+            // fulltext roots are indexed on their own
+            return;
+        }
         $nodeType = $node->getNodeType();
         $fulltextIndexingEnabledForNode = $this->isFulltextEnabled($node);
 
