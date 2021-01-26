@@ -3,7 +3,9 @@
 ...an experiment for a more lightweight elasticsearch integration for Neos CMS. This is built because I wanted
 to try out some different design decisions in parts of the Neos <-> Elasticsearch integration.
 
-This is a wrapper around Flowpack.Elasticsearch.ContentRepositoryAdaptor, which replaces its API.
+This is a wrapper around Flowpack.Elasticsearch.ContentRepositoryAdaptor, which replaces parts of its API.
+A huge thanks goes to everybody maintaining Flowpack.Elasticsearch.ContentRepositoryAdaptor and Flowpack.Elasticsearch,
+as we build upon this work and profit from it greatly.
 
 The project has the following goals and limitations:
 
@@ -40,6 +42,10 @@ The project has the following goals and limitations:
 
   We only support Elasticsearch 7 right now.
 
+- **Only index live the workspace**
+
+  We only index the live workspace, as this is the 99% case to be supported.
+
 ## Starting Elasticsearch for development
 
 ```bash
@@ -75,58 +81,134 @@ curl -X GET "localhost:9200/neoscr/_search?pretty" -H 'Content-Type: application
 '
 ```
 
-## Querying
+## Search Component
 
+As the search component usually needs to be heavily adjusted, we only include a snippet which can be copy/pasted
+and adjusted into your project:
 
+```
+prototype(My.Package:Search) < prototype(Neos.Fusion:Component) {
+    // for possibilities on how to build the query, see the next section in the documentation
+    @context.searchRequest = ${Elasticsearch.createRequest(site).query(Elasticsearch.createNeosFulltextQuery(site).fulltext(request.arguments.q))}
+    searchResults = Flowpack.Listable:PaginatedCollection {
+        collection = ${searchRequest}
+        itemsPerPage = 12
 
+        // we use cache mode "dynamic" for the full Search component; so we do not need an additional cache entry
+        // for the PaginatedCollection. 
+        @cache.mode = "embed"
+    }
+    renderer = afx`
+        <form action="." method="get">
+            <input name="q" value={request.arguments.q}/>
+            <button type="submit">Search</button>
+            
+            {props.searchResults}
+        </form>
+    `
+    // If you want to see the full request going to Elasticsearch, you can include
+    // the following snippet in the renderer above:
+    // <Neos.Fusion:Debug v={Json.stringify(searchRequest.requestForDebugging())} />
+ 
+    // The parameter "q" should be included in this pagination
+    prototype(Flowpack.Listable:PaginationParameters) {
+        q = ${request.arguments.q}
+    }
 
-
-- only batch indexing
-- only document nodes end up in the index
-
-./flow nodeindex:build
-
-https://www.elastic.co/guide/en/elasticsearch/reference/current/filter-search-results.html
-Use a boolean query with a filter clause. Search requests apply boolean filters to both search hits and aggregations.
-
-Filter context is in effect whenever a query clause is passed to a filter parameter, such as the filter or must_not
-parameters in the bool query, the filter parameter in the constant_score query, or the filter aggregation.
-https://www.elastic.co/guide/en/elasticsearch/reference/current/query-filter-context.html
-
-multiple indices
-
-sw_data_source = "neos"
-
-```js
-mainQ = {
-    "query": {
-        "bool": {
-            "should": [
-                neosQ,
-                otherIndexQ
-            ]
+    // We configure the cache mode "dynamic" here.
+    @cache {
+        mode = 'dynamic'
+        entryIdentifier {
+            node = ${node}
+            type = 'searchForm'
+        }
+        entryDiscriminator = ${request.arguments.q + '-' + request.arguments.currentPage}
+        context {
+            1 = 'node'
+            2 = 'documentNode'
+            3 = 'site'
+        }
+        entryTags {
+            1 = ${Neos.Caching.nodeTag(node)}
         }
     }
 }
 
-neosQ = {
-    "bool": {
-        "filter": [
-            {
-                "term": {
-                    "index_discriminator": "neos"
-                }
-            },
-            /*{... further filters, like "in part of the page tree" ...}*/
-        ],
-        "must": [
-            {
-                // or "multi_match"
-                "simple_query_string": {
-                    ...
-                }
-            }
-        ]
+// The result display is done here.
+// In the context, you'll find an object `searchResultDocument` which is of type
+// Sandstorm\LightweightElasticsearch\Query\Result\SearchResultDocument.
+prototype(Sandstorm.LightweightElasticsearch:SearchResultCase) {
+    neosNodes {
+        // all Documents in the index which are Nodes have a property "index_discriminator" set to "neos_nodes";
+        // This is in preparation for displaying other kinds of data.
+        condition = ${searchResultDocument.property('index_discriminator') == 'neos_nodes'}
+        renderer.@context.node = ${searchResultDocument.loadNode()}
+        renderer = afx`
+            <Neos.Neos:NodeLink node={node} />
+        `
     }
 }
 ```
+
+## Query API
+
+Simple Example as Eel expression:
+
+```
+    Elasticsearch.createRequest(site)
+    .query(
+        Elasticsearch.createNeosFulltextQuery(site)
+        .fulltext(request.arguments.q)
+    )
+```
+
+- If you want to search Neos nodes, we need to pass in a *context node* as first argument to `Elasticsearch.createRequest()`
+    - This way, the correct index (in the current language) is automatically searched
+    - You are able to call `searchResultDocument.loadNode()` on  the individual document
+- `Elasticsearch.createNeosFulltextQuery` *also needs a context node*, which specifies the part of the node tree which
+  we want to search.
+
+There exists a query API for more complex cases, i.e. you can do the following:
+
+```
+    Elasticsearch.createRequest(site)
+    .query(
+        Elasticsearch.createNeosFulltextQuery(site)
+        .fulltext(request.arguments.q)
+        // only the results to documents where myKey = myValue
+        .filter(Elasticsearch.createTermQuery("myKey", "myValue"))
+    )
+```
+
+More complex queries for searching through multiple indices can look like this:
+
+```
+    Elasticsearch.createRequest(site, ['index2', 'index3')
+    .query(
+        Elasticsearch.createBooleanQuery()
+            .should(
+                Elasticsearch.createNeosFulltextQuery(site)
+                .fulltext(request.arguments.q)
+                .filter(Elasticsearch.createTermQuery("index_discriminator", "neos_nodes"))
+            )
+            .should(
+                // add query for index2 here
+            )
+    )
+```
+
+## Aggregations and Faceting
+
+TODO: SearchRequestBuilder needs an "Aggregation" object structure
+TODO: the aggregation result must be displayed 
+
+## Indexing other data
+
+We suggest to set `index_discriminator` to different values for different data sources, to be able to
+identify different sources properly.
+
+TODO: example how an indexer might look like.
+
+## License
+
+MIT

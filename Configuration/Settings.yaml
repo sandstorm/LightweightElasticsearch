@@ -2,5 +2,20 @@
 Neos:
   ContentRepository:
     Search:
+      # we want to keep complexity lower; so we only index the live workspace
+      indexAllWorkspaces: false
+
+      # to keep the number of issues low when using the Neos backend and Elasticsearch is not properly set up,
+      # we disable realtime indexing and resort only to batch indexing.
       realtimeIndexing:
         enabled: false
+
+  Neos:
+    fusion:
+      autoInclude:
+        'Sandstorm.LightweightElasticsearch': true
+
+  Fusion:
+    defaultContext:
+      'Elasticsearch': Sandstorm\LightweightElasticsearch\Query\ElasticsearchHelper
+

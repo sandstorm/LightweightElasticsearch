@@ -3,13 +3,18 @@ declare(strict_types=1);
 
 namespace Sandstorm\LightweightElasticsearch\Query;
 
+use Neos\ContentRepository\Domain\Model\NodeInterface;
+use Neos\ContentRepository\Utility;
 use Neos\Flow\Annotations as Flow;
 use Flowpack\ElasticSearch\ContentRepositoryAdaptor\ElasticSearchClient;
 use Flowpack\ElasticSearch\ContentRepositoryAdaptor\Exception;
 use Flowpack\ElasticSearch\Transfer\Exception\ApiException;
 use Neos\Eel\ProtectedContextAwareInterface;
+use Neos\Flow\Log\ThrowableStorageInterface;
 use Neos\Flow\Log\Utility\LogEnvironment;
+use Psr\Log\LoggerInterface;
 use Sandstorm\LightweightElasticsearch\Query\Result\SearchResult;
+
 
 class SearchRequestBuilder implements ProtectedContextAwareInterface
 {
@@ -20,34 +25,79 @@ class SearchRequestBuilder implements ProtectedContextAwareInterface
      */
     protected $elasticSearchClient;
 
-    private array $indexNames;
+    /**
+     * @Flow\Inject
+     * @var ThrowableStorageInterface
+     */
+    protected $throwableStorage;
 
-    public function __construct(array $indexNames) {
-        $this->indexNames = $indexNames;
+    /**
+     * @Flow\Inject
+     * @var LoggerInterface
+     */
+    protected $logger;
+
+    private array $additionalIndices;
+
+    /**
+     * @var boolean
+     */
+    protected $logThisQuery = false;
+
+    /**
+     * @var string
+     */
+    protected $logMessage;
+
+    /**
+     * @var NodeInterface|null
+     */
+    private ?NodeInterface $contextNode;
+
+    public function __construct(NodeInterface $contextNode = null, array $additionalIndices = [])
+    {
+        $this->contextNode = $contextNode;
+        $this->additionalIndices = $additionalIndices;
     }
 
     protected array $request = [];
 
-    public function from(int $offset) {
-        $this->request['from'] = $offset;
-    }
 
-    public function size(int $size) {
-        $this->request['size'] = $size;
-    }
-
-    public function query(SearchQueryBuilderInterface $query)
+    public function query(SearchQueryBuilderInterface $query): self
     {
         $this->request['query'] = $query->buildQuery();
+        return $this;
     }
 
+    public function from(int $offset): self
+    {
+        $this->request['from'] = $offset;
+        return $this;
+    }
+
+    public function size(int $size): self
+    {
+        $this->request['size'] = $size;
+        return $this;
+    }
 
     /**
-     * Execute the query and return the list of nodes as result.
+     * Log the current request to the Elasticsearch log for debugging after it has been executed.
      *
-     * This method is rather internal; just to be called from the ElasticSearchQueryResult. For the public API, please use execute()
+     * @param string $message an optional message to identify the log entry
+     * @api
+     */
+    public function log($message = null): self
+    {
+        $this->logThisQuery = true;
+        $this->logMessage = $message;
+
+        return $this;
+    }
+
+    /**
+     * Execute the query and return the SearchResult object as result
      *
-     * @throws Exception
      * @throws \Flowpack\ElasticSearch\Exception
      * @throws \Neos\Flow\Http\Exception
      */
@@ -56,19 +106,50 @@ class SearchRequestBuilder implements ProtectedContextAwareInterface
         try {
             $timeBefore = microtime(true);
             $request = $this->request;
-            $response = $this->elasticSearchClient->request('GET', '/' . implode(',', $this->indexNames) . '/_search', [], $request);
+
+            $indexNames = $this->additionalIndices;
+            if ($this->contextNode !== null) {
+                $dimensionValues = $this->contextNode->getContext()->getDimensions();
+                $dimensionHash = Utility::sortDimensionValueArrayAndReturnDimensionsHash($dimensionValues);
+                $indexNames[] = 'neoscr-' . $dimensionHash;
+            }
+
+
+            $response = $this->elasticSearchClient->request('GET', '/' . implode(',', $indexNames) . '/_search', [], $request);
             $timeAfterwards = microtime(true);
 
-            $searchResult = SearchResult::fromElasticsearchJsonResponse($response->getTreatedContent());
+            $searchResult = SearchResult::fromElasticsearchJsonResponse($response->getTreatedContent(), $this->contextNode);
 
-            $this->logThisQuery && $this->logger->debug(sprintf('Query Log (%s): Indexname: %s %s -- execution time: %s ms -- Limit: %s -- Number of results returned: %s -- Total Results: %s', $this->logMessage, $this->getIndexName(), $request, (($timeAfterwards - $timeBefore) * 1000), $this->limit, count($searchResult->getHits()), $searchResult->getTotal()), LogEnvironment::fromMethodName(__METHOD__));
-
+            $this->logThisQuery && $this->logger->debug(sprintf('Query Log (%s): Indexname: %s %s -- execution time: %s ms -- Limit: %s -- Number of results returned: %s -- Total Results: %s', $this->logMessage, implode(',', $indexNames), $request, (($timeAfterwards - $timeBefore) * 1000), $this->size, count(iterator_to_array($searchResult->getIterator())), $searchResult->total()), LogEnvironment::fromMethodName(__METHOD__));
             return $searchResult;
         } catch (ApiException $exception) {
             $message = $this->throwableStorage->logThrowable($exception);
             $this->logger->error(sprintf('Request failed with %s', $message), LogEnvironment::fromMethodName(__METHOD__));
             return SearchResult::error();
         }
+    }
+
+    /**
+     * DO NOT USE THIS METHOD DIRECTLY; it is implemented to ensure Flowpack.Listable plays well with these objects here.
+     *
+     * @return int
+     * @throws \Flowpack\ElasticSearch\Exception
+     * @throws \Neos\Flow\Http\Exception
+     * @internal
+     */
+    public function count(): int
+    {
+        return $this->execute()->total();
+    }
+
+    /**
+     * Returns the full request as it is sent to Elasticsearch; useful for debugging purposes.
+     *
+     * @return array
+     */
+    public function requestForDebugging(): array
+    {
+        return $this->request;
     }
 
     public function allowsCallOfMethod($methodName)

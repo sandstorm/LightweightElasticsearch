@@ -8,22 +8,22 @@ use Neos\Flow\Annotations as Flow;
 /**
  * @Flow\Proxy(false)
  */
-class TermQueryBuilder implements SearchQueryBuilderInterface
+class TermsQueryBuilder implements SearchQueryBuilderInterface
 {
     /**
      * @var array[]
      */
     private array $query;
 
-    public static function create(string $key, $value): self
+    public static function create(string $key, array $values): self
     {
-        return new self($key, $value);
+        return new self($key, $values);
     }
 
-    private function __construct(string $key, $value)
+    private function __construct(string $key, array $value)
     {
         $this->query = [
-            'term' => [
+            'terms' => [
                 $key => $value
             ]
         ];

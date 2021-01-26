@@ -20,15 +20,17 @@ use Neos\ContentRepository\Domain\Model\NodeInterface;
 use Neos\ContentRepository\Search\Search\QueryBuilderInterface;
 
 /**
- * Eel Helper to start search queries
+ * Eel Helper to write search queries.
+ * Example:
  *
- * Elasticsearch.createRequest('indexnames')
+ * Elasticsearch.createRequest(site)
  *   .query(
  *      Elasticsearch.createBooleanQuery()
- *         .should(Elasticsearch.createNeosFulltextQuery(site).fulltext(...).filter(Elasticsearch.createTermQuery("key", "value")))
+ *         .should(Elasticsearch.createNeosFulltextQuery(site).fulltext("mein Suchstring")))
  *         .should(...)
- *         .must(...)
+ *         .should(...)
  *   )
+ *   .aggregation()
  *   .execute()
  */
 class ElasticsearchHelper implements ProtectedContextAwareInterface
@@ -39,30 +41,26 @@ class ElasticsearchHelper implements ProtectedContextAwareInterface
      * @param NodeInterface $contextNode
      * @return QueryBuilderInterface
      */
-    public function createRequest(): SearchRequestBuilder
+    public function createRequest(NodeInterface $contextNode = null, array $additionalIndices = []): SearchRequestBuilder
     {
-        return new SearchRequestBuilder();
+        return new SearchRequestBuilder($contextNode, $additionalIndices);
     }
 
     public function createBooleanQuery(): BooleanQueryBuilder
     {
-        return new BooleanQueryBuilder();
+        return BooleanQueryBuilder::create();
     }
 
     public function createNeosFulltextQuery(NodeInterface $contextNode): NeosFulltextQueryBuilder
     {
-        return new NeosFulltextQueryBuilder($contextNode);
+        return NeosFulltextQueryBuilder::create($contextNode);
     }
 
     public function createTermQuery(string $fieldName, $value): TermQueryBuilder
     {
-        return new TermQueryBuilder($fieldName, $value);
+        return TermQueryBuilder::create($fieldName, $value);
     }
 
-    /**
-     * @param string $methodName
-     * @return boolean
-     */
     public function allowsCallOfMethod($methodName)
     {
         return true;

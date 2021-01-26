@@ -9,3 +9,16 @@ prototype(Flowpack.Listable:PaginatedCollection) {
         renderer.@process.execute = ${value.execute()}
     }
 }
+
+prototype(Flowpack.Listable:ContentCaseShort) {
+    lightweightElasticsearchDocument {
+        @position = "start"
+        condition = ${Type.instance(node, 'Sandstorm\LightweightElasticsearch\Query\Result\SearchResultDocument')}
+        condition = true
+        type = 'Sandstorm.LightweightElasticsearch:SearchResultCase'
+        element.@context.searchResultDocument = ${node}
+    }
+}
+
+prototype(Sandstorm.LightweightElasticsearch:SearchResultCase) < prototype(Neos.Fusion:Case) {
+}

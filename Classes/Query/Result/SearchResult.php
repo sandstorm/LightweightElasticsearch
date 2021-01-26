@@ -3,12 +3,25 @@
 
 namespace Sandstorm\LightweightElasticsearch\Query\Result;
 
+use Neos\ContentRepository\Domain\Model\NodeInterface;
+use Neos\Eel\ProtectedContextAwareInterface;
+use Neos\Flow\Annotations as Flow;
 
-class SearchResult implements \IteratorAggregate
+/**
+ * Wrapper for all search results
+ *
+ * @Flow\Proxy(false)
+ */
+class SearchResult implements \IteratorAggregate, ProtectedContextAwareInterface, \Countable
 {
-    public static function fromElasticsearchJsonResponse(array $response): self
+
+    private array $response;
+    private bool $isError;
+    private ?NodeInterface $contextNode;
+
+    public static function fromElasticsearchJsonResponse(array $response, NodeInterface $contextNode): self
     {
-        return new SearchResult($response, false);
+        return new SearchResult($response, false, $contextNode);
     }
 
     public static function error(): self
@@ -16,13 +29,11 @@ class SearchResult implements \IteratorAggregate
         return new SearchResult([], true);
     }
 
-    private array $response;
-    private bool $isError;
-
-    private function __construct(array $response, bool $isError)
+    private function __construct(array $response, bool $isError, NodeInterface $contextNode = null)
     {
         $this->response = $response;
         $this->isError = $isError;
+        $this->contextNode = $contextNode;
     }
 
     public function isError(): bool
@@ -32,8 +43,32 @@ class SearchResult implements \IteratorAggregate
 
     public function getIterator(): \Generator
     {
-        foreach ($this->response['hits']['hits'] as $hit) {
-            yield SearchResultDocument::fromElasticsearchJsonResponse($hit);
+        if (isset($this->response['hits']['hits'])) {
+            foreach ($this->response['hits']['hits'] as $hit) {
+                yield SearchResultDocument::fromElasticsearchJsonResponse($hit, $this->contextNode);
+            }
         }
+    }
+
+    public function allowsCallOfMethod($methodName)
+    {
+        return true;
+    }
+
+    public function total(): int
+    {
+        if (!isset($this->response['hits']['total']['value'])) {
+            return 0;
+        }
+        return $this->response['hits']['total']['value'];
+
+    }
+
+    public function count()
+    {
+        if (isset($this->response['hits']['hits'])) {
+            return count($this->response['hits']['hits']);
+        }
+        return 0;
     }
 }
