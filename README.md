@@ -89,9 +89,9 @@ and adjusted into your project:
 ```
 prototype(My.Package:Search) < prototype(Neos.Fusion:Component) {
     // for possibilities on how to build the query, see the next section in the documentation
-    @context.searchRequest = ${Elasticsearch.createRequest(site).query(Elasticsearch.createNeosFulltextQuery(site).fulltext(request.arguments.q))}
+    @context.mainSearchRequest = ${Elasticsearch.createRequest(site).query(Elasticsearch.createNeosFulltextQuery(site).fulltext(request.arguments.q))}
     searchResults = Flowpack.Listable:PaginatedCollection {
-        collection = ${searchRequest}
+        collection = ${mainSearchRequest}
         itemsPerPage = 12
 
         // we use cache mode "dynamic" for the full Search component; so we do not need an additional cache entry
@@ -102,13 +102,18 @@ prototype(My.Package:Search) < prototype(Neos.Fusion:Component) {
         <form action="." method="get">
             <input name="q" value={request.arguments.q}/>
             <button type="submit">Search</button>
+
+            <div @if.isError={mainSearchRequest.execute().error}>
+                There was an error executing the search request. Please try again in a few minutes.
+            </div>
+            <p>Showing {mainSearchRequest.execute().count()} of {mainSearchRequest.execute().total()} results</p>
             
             {props.searchResults}
         </form>
     `
     // If you want to see the full request going to Elasticsearch, you can include
     // the following snippet in the renderer above:
-    // <Neos.Fusion:Debug v={Json.stringify(searchRequest.requestForDebugging())} />
+    // <Neos.Fusion:Debug v={Json.stringify(mainSearchRequest.requestForDebugging())} />
  
     // The parameter "q" should be included in this pagination
     prototype(Flowpack.Listable:PaginationParameters) {
@@ -196,6 +201,8 @@ More complex queries for searching through multiple indices can look like this:
             )
     )
 ```
+
+**We recommend to build more complex queries through Custom Eel helpers; directly calling the Query Builders of this package**
 
 ## Aggregations and Faceting
 
