@@ -8,6 +8,7 @@ use Flowpack\ElasticSearch\Transfer\Exception\ApiException;
 use Sandstorm\LightweightElasticsearch\Query\Aggregation\AggregationBuilderInterface;
 use Sandstorm\LightweightElasticsearch\Query\Aggregation\AggregationResultInterface;
 use Sandstorm\LightweightElasticsearch\Query\Aggregation\QueryErrorAggregationResult;
+use Sandstorm\LightweightElasticsearch\Query\Query\SearchQueryBuilderInterface;
 
 /**
  * Specialized request builder which can run a SINGLE top-level aggregation.

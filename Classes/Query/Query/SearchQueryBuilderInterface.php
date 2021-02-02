@@ -1,8 +1,7 @@
 <?php
 
 
-namespace Sandstorm\LightweightElasticsearch\Query;
-
+namespace Sandstorm\LightweightElasticsearch\Query\Query;
 
 interface SearchQueryBuilderInterface
 {

@@ -4,7 +4,7 @@
 namespace Sandstorm\LightweightElasticsearch\Query\Aggregation;
 
 use Neos\Flow\Annotations as Flow;
-use Sandstorm\LightweightElasticsearch\Query\SearchQueryBuilderInterface;
+use Sandstorm\LightweightElasticsearch\Query\Query\SearchQueryBuilderInterface;
 
 /**
  * A Terms aggregation can be used to build faceted search.

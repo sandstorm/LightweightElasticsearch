@@ -18,6 +18,9 @@ use Neos\Flow\Mvc\ActionRequest;
 use Neos\ContentRepository\Domain\Model\NodeInterface;
 use Sandstorm\LightweightElasticsearch\Query\Aggregation\AggregationsBuilder;
 use Sandstorm\LightweightElasticsearch\Query\Aggregation\TermsAggregationBuilder;
+use Sandstorm\LightweightElasticsearch\Query\Query\BooleanQueryBuilder;
+use Sandstorm\LightweightElasticsearch\Query\Query\NeosFulltextQueryBuilder;
+use Sandstorm\LightweightElasticsearch\Query\Query\TermQueryBuilder;
 
 /**
  * Eel Helper to write search queries.

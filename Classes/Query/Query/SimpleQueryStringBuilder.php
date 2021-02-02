@@ -1,7 +1,7 @@
 <?php
+declare(strict_types=1);
 
-
-namespace Sandstorm\LightweightElasticsearch\Query;
+namespace Sandstorm\LightweightElasticsearch\Query\Query;
 
 use Neos\Flow\Annotations as Flow;
 

@@ -5,6 +5,7 @@ namespace Sandstorm\LightweightElasticsearch\Query;
 
 use Neos\Flow\Annotations as Flow;
 use Flowpack\ElasticSearch\Transfer\Exception\ApiException;
+use Sandstorm\LightweightElasticsearch\Query\Query\SearchQueryBuilderInterface;
 use Sandstorm\LightweightElasticsearch\Query\Result\SearchResult;
 
 
