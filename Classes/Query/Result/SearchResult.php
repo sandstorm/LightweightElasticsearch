@@ -6,6 +6,7 @@ namespace Sandstorm\LightweightElasticsearch\Query\Result;
 use Neos\ContentRepository\Domain\Model\NodeInterface;
 use Neos\Eel\ProtectedContextAwareInterface;
 use Neos\Flow\Annotations as Flow;
+use Sandstorm\LightweightElasticsearch\Query\SearchRequestBuilder;
 
 /**
  * Wrapper for all search results
@@ -19,11 +20,25 @@ class SearchResult implements \IteratorAggregate, ProtectedContextAwareInterface
     private bool $isError;
     private ?NodeInterface $contextNode;
 
+    /**
+     * DO NOT CALL THIS DIRECTLY; only to be called from {@see SearchRequestBuilder::execute()}
+     *
+     * @param array $response
+     * @param NodeInterface $contextNode
+     * @return static
+     * @internal
+     */
     public static function fromElasticsearchJsonResponse(array $response, NodeInterface $contextNode): self
     {
         return new SearchResult($response, false, $contextNode);
     }
 
+    /**
+     * DO NOT CALL THIS DIRECTLY; only to be called from {@see SearchRequestBuilder::execute()}
+     *
+     * @return static
+     * @internal
+     */
     public static function error(): self
     {
         return new SearchResult([], true);
@@ -50,11 +65,6 @@ class SearchResult implements \IteratorAggregate, ProtectedContextAwareInterface
         }
     }
 
-    public function allowsCallOfMethod($methodName)
-    {
-        return true;
-    }
-
     public function total(): int
     {
         if (!isset($this->response['hits']['total']['value'])) {
@@ -70,5 +80,10 @@ class SearchResult implements \IteratorAggregate, ProtectedContextAwareInterface
             return count($this->response['hits']['hits']);
         }
         return 0;
+    }
+
+    public function allowsCallOfMethod($methodName)
+    {
+        return true;
     }
 }

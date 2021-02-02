@@ -14,10 +14,10 @@ namespace Sandstorm\LightweightElasticsearch\Query;
  */
 
 use Neos\Eel\ProtectedContextAwareInterface;
-use Neos\Flow\Annotations as Flow;
-use Neos\Flow\ObjectManagement\ObjectManager;
+use Neos\Flow\Mvc\ActionRequest;
 use Neos\ContentRepository\Domain\Model\NodeInterface;
-use Neos\ContentRepository\Search\Search\QueryBuilderInterface;
+use Sandstorm\LightweightElasticsearch\Query\Aggregation\AggregationsBuilder;
+use Sandstorm\LightweightElasticsearch\Query\Aggregation\TermsAggregationBuilder;
 
 /**
  * Eel Helper to write search queries.
@@ -38,8 +38,9 @@ class ElasticsearchHelper implements ProtectedContextAwareInterface
     /**
      * Create a new Search Query builder
      *
-     * @param NodeInterface $contextNode
-     * @return QueryBuilderInterface
+     * @param NodeInterface|null $contextNode
+     * @param array $additionalIndices
+     * @return SearchRequestBuilder
      */
     public function createRequest(NodeInterface $contextNode = null, array $additionalIndices = []): SearchRequestBuilder
     {
@@ -59,6 +60,16 @@ class ElasticsearchHelper implements ProtectedContextAwareInterface
     public function createTermQuery(string $fieldName, $value): TermQueryBuilder
     {
         return TermQueryBuilder::create($fieldName, $value);
+    }
+
+    public function createAggregationRequest(NodeInterface $contextNode = null, array $additionalIndices = []): AggregationRequestBuilder
+    {
+        return new AggregationRequestBuilder($contextNode, $additionalIndices);
+    }
+
+    public function createTermsAggregation(string $fieldName, ?string $selectedValue = null): TermsAggregationBuilder
+    {
+        return TermsAggregationBuilder::create($fieldName, $selectedValue);
     }
 
     public function allowsCallOfMethod($methodName)
