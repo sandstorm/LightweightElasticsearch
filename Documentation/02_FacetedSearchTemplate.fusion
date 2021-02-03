@@ -50,6 +50,7 @@ prototype(My.Package:Search) < prototype(Neos.Fusion:Component) {
         <form action="." method="get">
             <input name="q" value={request.arguments.q}/>
             <button type="submit">Search</button>
+
             <div @if.isError={mainSearchRequest.execute().error}>
                 There was an error executing the search request. Please try again in a few minutes.
             </div>

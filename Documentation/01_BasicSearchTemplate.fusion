@@ -1,6 +1,7 @@
 prototype(My.Package:Search) < prototype(Neos.Fusion:Component) {
     // for possibilities on how to build the query, see the next section in the documentation
-    @context.mainSearchRequest = ${Elasticsearch.createRequest(site).query(Elasticsearch.createNeosFulltextQuery(site).fulltext(request.arguments.q))}
+    _elasticsearchBaseQuery = ${Elasticsearch.createNeosFulltextQuery(site).fulltext(request.arguments.q)}
+    @context.mainSearchRequest = ${Elasticsearch.createRequest(site).query(this._elasticsearchBaseQuery))}
 
     // Search Result Display is controlled through Flowpack.Listable
     searchResults = Flowpack.Listable:PaginatedCollection {
@@ -64,5 +65,8 @@ prototype(Sandstorm.LightweightElasticsearch:SearchResultCase) {
         renderer = afx`
             <Neos.Neos:NodeLink node={node} />
         `
+        // If you want to see the full Search Response hit, you can include the following
+        // snippet in the renderer above:
+        // <Neos.Fusion:Debug result={searchResultDocument.fullSearchHit} />
     }
 }

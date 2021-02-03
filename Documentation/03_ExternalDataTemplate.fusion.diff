@@ -42,7 +42,15 @@
          renderer = afx`
              <ul>
                  <Neos.Fusion:Loop items={nodeTypesFacet.buckets} itemName="bucket">
-@@ -67,8 +56,7 @@
+@@ -50,7 +39,6 @@
+         <form action="." method="get">
+             <input name="q" value={request.arguments.q}/>
+             <button type="submit">Search</button>
+-
+             <div @if.isError={mainSearchRequest.execute().error}>
+                 There was an error executing the search request. Please try again in a few minutes.
+             </div>
+@@ -68,8 +56,7 @@
      // The parameter "q" should be included in this pagination
      prototype(Flowpack.Listable:PaginationParameters) {
          q = ${request.arguments.q}
@@ -52,7 +60,7 @@
      }
  
      // We configure the cache mode "dynamic" here.
-@@ -78,7 +66,6 @@
+@@ -79,7 +66,6 @@
              node = ${node}
              type = 'searchForm'
          }
@@ -60,7 +68,7 @@
          entryDiscriminator = ${request.arguments.q + '-' + request.arguments.currentPage + '-' + request.arguments.nodeTypesFilter}
          context {
              1 = 'node'
-@@ -95,6 +82,12 @@
+@@ -96,6 +82,12 @@
  // In the context, you'll find an object `searchResultDocument` which is of type
  // Sandstorm\LightweightElasticsearch\Query\Result\SearchResultDocument.
  prototype(Sandstorm.LightweightElasticsearch:SearchResultCase) {

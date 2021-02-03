@@ -1,9 +1,9 @@
-@@ -1,6 +1,24 @@
+@@ -1,7 +1,24 @@
  prototype(My.Package:Search) < prototype(Neos.Fusion:Component) {
 -    // for possibilities on how to build the query, see the next section in the documentation
--    @context.mainSearchRequest = ${Elasticsearch.createRequest(site).query(Elasticsearch.createNeosFulltextQuery(site).fulltext(request.arguments.q))}
 +    // this is the base query from the user which should *always* be applied.
-+    _elasticsearchBaseQuery = ${Elasticsearch.createNeosFulltextQuery(site).fulltext(request.arguments.q)}
+     _elasticsearchBaseQuery = ${Elasticsearch.createNeosFulltextQuery(site).fulltext(request.arguments.q)}
+-    @context.mainSearchRequest = ${Elasticsearch.createRequest(site).query(this._elasticsearchBaseQuery))}
 +
 +    // register a Terms aggregation with the URL parameter "nodeTypesFilter"
 +    _nodeTypesAggregation = ${Elasticsearch.createTermsAggregation("neos_type", request.arguments.nodeTypesFilter)}
@@ -25,7 +25,7 @@
  
      // Search Result Display is controlled through Flowpack.Listable
      searchResults = Flowpack.Listable:PaginatedCollection {
-@@ -11,16 +29,34 @@
+@@ -12,6 +29,23 @@
          // for the PaginatedCollection.
          @cache.mode = "embed"
      }
@@ -49,10 +49,7 @@
      renderer = afx`
          <form action="." method="get">
              <input name="q" value={request.arguments.q}/>
-             <button type="submit">Search</button>
--
-             <div @if.isError={mainSearchRequest.execute().error}>
-                 There was an error executing the search request. Please try again in a few minutes.
+@@ -22,6 +56,8 @@
              </div>
              <p>Showing {mainSearchRequest.execute().count()} of {mainSearchRequest.execute().total()} results</p>
  
@@ -61,7 +58,7 @@
              {props.searchResults}
          </form>
      `
-@@ -31,6 +67,8 @@
+@@ -32,6 +68,8 @@
      // The parameter "q" should be included in this pagination
      prototype(Flowpack.Listable:PaginationParameters) {
          q = ${request.arguments.q}
@@ -70,7 +67,7 @@
      }
  
      // We configure the cache mode "dynamic" here.
-@@ -40,7 +78,8 @@
+@@ -41,7 +79,8 @@
              node = ${node}
              type = 'searchForm'
          }
@@ -80,12 +77,3 @@
          context {
              1 = 'node'
              2 = 'documentNode'
-@@ -64,5 +103,8 @@
-         renderer = afx`
-             <Neos.Neos:NodeLink node={node} />
-         `
-+        // If you want to see the full Search Response hit, you can include the following
-+        // snippet in the renderer above:
-+        // <Neos.Fusion:Debug result={searchResultDocument.fullSearchHit} />
-     }
- }

@@ -227,10 +227,12 @@ $indexer->removeObsoleteIndices();
 For your convenience, a full CommandController can be copied/pasted below:
 
 <details>
-  <summary>Command Controller for custom indexing</summary>
-  ```
-  ###03_CommandController.php###
-  ```
+<summary>Command Controller for custom indexing</summary>
+
+```
+###03_CommandController.php###
+```
+
 </details>
 
 See the next section for querying other data sources
@@ -269,10 +271,12 @@ return BooleanQueryBuilder::create()
 As an example, you can also check out the full Eel helper:
 
 <details>
-  <summary>Eel helper for fulltext querying custom data</summary>
-  ```
-  ###03_FulltextEelHelper.php###
-  ```
+<summary>Eel helper for fulltext querying custom data</summary>
+
+```
+###03_FulltextEelHelper.php###
+```
+
 </details>
 
 **Remember to register the Eel helper in `Settings.yaml` as usual:
@@ -326,10 +330,12 @@ See the following diff, or the full source code below:
 You can also copy/paste the full file:
 
 <details>
-  <summary>See the faceted search example</summary>
-  ```
-  ###03_ExternalDataTemplate.fusion###
-  ```
+<summary>See the faceted search example</summary>
+
+```
+###03_ExternalDataTemplate.fusion###
+```
+
 </details>
 
 
