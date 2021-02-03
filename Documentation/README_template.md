@@ -182,127 +182,156 @@ For the result listing, we need to take into account the global search, and the 
 To model that in Elasticsearch, we recommend to use multiple queries: One for each facet; and one for rendering
 the result listing.
 
-We suggest that you start with the following template (which we'll explain one by one):
+Here follows the list of modifications done to the template above:
 
-```fusion
-prototype(My.Package:Search) < prototype(Neos.Fusion:Component) {
-    // this is the base query from the user which should *always* be applied.
-    _elasticsearchBaseQuery = ${Elasticsearch.createNeosFulltextQuery(site).fulltext(request.arguments.q)}
-
-    // register a Terms aggregation with the URL parameter "nodeTypesFilter"
-    _nodeTypesAggregation = ${Elasticsearch.createTermsAggregation("neos_type", request.arguments.nodeTypesFilter)}
-
-    // This is the main elasticsearch query which determines the search results:
-    // - this._elasticsearchBaseQuery is applied
-    // - this._nodeTypesAggregation is applied as well (if the user chose a facet value)
-    // <-- if you add additional aggregations, you need to add them here to this list.
-    @context.mainSearchRequest = ${Elasticsearch.createRequest(site).query(Elasticsearch.createBooleanQuery().must(this._elasticsearchBaseQuery).filter(this._nodeTypesAggregation))}
-    
-    // The Request is for displaying the Node Types aggregation (faceted search).
-    //
-    // For faceted search to work properly, we need to add all OTHER query parts as filter; so NOT ourselves.
-    // This means, for the `.aggregation()` part, we take the aggregation itself.
-    // For the `.filter()` part, we add:
-    // - this._elasticsearchBaseQuery to ensure the entered query string by the user is taken into account
-    // <-- if you add additional aggregations, you need to add them here to the list.
-    @context.nodeTypesFacet = ${Elasticsearch.createAggregationRequest(site).aggregation(this._nodeTypesAggregation).filter(this._elasticsearchBaseQuery).execute()}
-    
-    // Search Result Display is controlled through Flowpack.Listable
-    searchResults = Flowpack.Listable:PaginatedCollection {
-        collection = ${mainSearchRequest}
-        itemsPerPage = 12
-
-        // we use cache mode "dynamic" for the full Search component; so we do not need an additional cache entry
-        // for the PaginatedCollection.
-        @cache.mode = "embed"
-    }
-
-    nodeTypesFacet = Neos.Fusion:Component {
-        // the nodeTypesFacet is a "Terms" aggregation...
-        // ...so we can access nodeTypesFacet.buckets.
-        // To build a link to the facet, we use Neos.Neos:NodeLink with two additions:
-        // - addQueryString must be set to TRUE, to keep the search query and potentially other facets.
-        // - to build the arguments, we need to set `nodeTypesFilter` to the current bucket key (or to null in case we want to clear the facet) 
-        renderer = afx`
-            <ul>
-                <Neos.Fusion:Loop items={nodeTypesFacet.buckets} itemName="bucket">
-                    <li><Neos.Neos:NodeLink node={documentNode} addQueryString={true} arguments={{nodeTypesFilter: bucket.key}}>{bucket.key}</Neos.Neos:NodeLink> {bucket.doc_count} <span @if.isTrue={bucket.key == nodeTypesFacet.selectedValue}>(selected)</span></li>
-                </Neos.Fusion:Loop>
-            </ul>
-            <Neos.Neos:NodeLink @if.isTrue={nodeTypesFacet.selectedValue} node={documentNode} addQueryString={true} arguments={{nodeTypesFilter: null}}>CLEAR FACET</Neos.Neos:NodeLink>
-        `
-    }
-
-    renderer = afx`
-        <form action="." method="get">
-            <input name="q" value={request.arguments.q}/>
-            <button type="submit">Search</button>
-            <div @if.isError={mainSearchRequest.execute().error}>
-                There was an error executing the search request. Please try again in a few minutes.
-            </div>
-            <p>Showing {mainSearchRequest.execute().count()} of {mainSearchRequest.execute().total()} results</p>
-
-            {props.nodeTypesFacet}
-
-            {props.searchResults}
-        </form>
-    `
-    // If you want to see the full request going to Elasticsearch, you can include
-    // the following snippet in the renderer above:
-    // <Neos.Fusion:Debug v={Json.stringify(mainSearchRequest.requestForDebugging())} />
-
-    // The parameter "q" should be included in this pagination
-    prototype(Flowpack.Listable:PaginationParameters) {
-        q = ${request.arguments.q}
-        // <-- if you add additional aggregations, you need to add the parameter names here 
-        nodeTypesFilter = ${request.arguments.nodeTypesFilter}
-    }
-
-    // We configure the cache mode "dynamic" here.
-    @cache {
-        mode = 'dynamic'
-        entryIdentifier {
-            node = ${node}
-            type = 'searchForm'
-        }
-        // <-- if you add additional aggregations, you need to add the parameter names to the entryDiscriminator
-        entryDiscriminator = ${request.arguments.q + '-' + request.arguments.currentPage + '-' + request.arguments.nodeTypesFilter}
-        context {
-            1 = 'node'
-            2 = 'documentNode'
-            3 = 'site'
-        }
-        entryTags {
-            1 = ${Neos.Caching.nodeTag(node)}
-        }
-    }
-}
-
-// The result display is done here.
-// In the context, you'll find an object `searchResultDocument` which is of type
-// Sandstorm\LightweightElasticsearch\Query\Result\SearchResultDocument.
-prototype(Sandstorm.LightweightElasticsearch:SearchResultCase) {
-    neosNodes {
-        // all Documents in the index which are Nodes have a property "index_discriminator" set to "neos_nodes";
-        // This is in preparation for displaying other kinds of data.
-        condition = ${searchResultDocument.property('index_discriminator') == 'neos_nodes'}
-        renderer.@context.node = ${searchResultDocument.loadNode()}
-        renderer = afx`
-            <Neos.Neos:NodeLink node={node} />
-        `
-        // If you want to see the full Search Response hit, you can include the following
-        // snippet in the renderer above:
-        // <Neos.Fusion:Debug result={searchResultDocument.fullSearchHit} />
-    }
-}
+```diff
+###02_FacetedSearchTemplate.fusion.diff###
 ```
+
+You can also copy/paste the full file:
+
+<details>
+  <summary>See the faceted search example</summary>
+  ```
+  ###02_FacetedSearchTemplate.fusion###
+  ```
+</details>
+
+
+
 
 ## Indexing other data
 
 We suggest to set `index_discriminator` to different values for different data sources, to be able to
 identify different sources properly.
 
-TODO: example how an indexer might look like.
+You can use the `CustomIndexer` as a basis for indexing as follows:
+
+```php
+$indexer = CustomIndexer::create('faq');
+$indexer->createIndexWithMapping(['properties' => [
+    'faqEntryTitle' => [
+        'type' => 'text'
+    ]
+]]);
+$indexer->index([
+    'faqEntryTitle' => 'FAQ Dresden'
+]);
+// index other documents here
+$indexer->finalizeAndSwitchAlias();
+
+// Optionally for cleanup
+$indexer->removeObsoleteIndices();
+```
+
+For your convenience, a full CommandController can be copied/pasted below:
+
+<details>
+  <summary>Command Controller for custom indexing</summary>
+  ```
+  ###03_CommandController.php###
+  ```
+</details>
+
+See the next section for querying other data sources
+
+## Querying other data
+
+Three parts need to be adjusted for querying other data sources:
+
+- adjust `Elasticsearch.createRequest()` and `Elasticsearch.createAggregationRequest()` calls
+- build up and use the fulltext query for your custom data
+- customize result rendering.
+
+We'll now go through these steps one by one.
+
+**Adjust `Elasticsearch.createRequest()` and `Elasticsearch.createAggregationRequest()`**
+
+Here, you need to include the other index as second parameter; so for example `Elasticsearch.createRequest(site, ['faq'])`
+is a valid invocation.
+
+
+**Build up the fulltext query**
+
+We suggest that you build custom Eel helpers for doing the fulltext search in your custom data,
+e.g. by filtering on `index_discriminator` and using a `simple_query_string` query as follows:
+
+```php
+return BooleanQueryBuilder::create()
+    ->filter(TermQueryBuilder::create('index_discriminator', 'faq'))
+    ->must(
+        SimpleQueryStringBuilder::create($query ?? '')->fields([
+            'faqEntryTitle^5',
+        ])
+    );
+```
+
+As an example, you can also check out the full Eel helper:
+
+<details>
+  <summary>Eel helper for fulltext querying custom data</summary>
+  ```
+  ###03_FulltextEelHelper.php###
+  ```
+</details>
+
+**Remember to register the Eel helper in `Settings.yaml` as usual:
+
+```yaml
+Neos:
+  Fusion:
+    defaultContext:
+      MyQueries: My\Package\Eel\MyQueries
+```
+
+
+**Use the fulltext query**
+
+To use both the Neos and your custom fulltext query, these two queries should be combined using a `should` clause
+in the `Terms` query; so this is like an "or" query combination:
+
+```
+Elasticsearch.createBooleanQuery()
+    .should(Elasticsearch.createNeosFulltextQuery(site).fulltext(request.arguments.q))
+    .should(MyQueries.faqQuery(request.arguments.q))}
+```
+
+
+**Adjust Result Rendering**
+
+By adding a conditional branch to `prototype(Sandstorm.LightweightElasticsearch:SearchResultCase)`, you can have a custom
+result rendering:
+
+```neosfusion
+prototype(Sandstorm.LightweightElasticsearch:SearchResultCase) {
+    faqEntries {
+        condition = ${searchResultDocument.property('index_discriminator') == 'faq'}
+        renderer = afx`
+            {searchResultDocument.properties.faqEntryTitle}
+        `
+    }
+}
+```
+
+
+**Putting it all together**
+
+See the following diff, or the full source code below:
+
+
+```diff
+###03_ExternalDataTemplate.fusion.diff###
+```
+
+You can also copy/paste the full file:
+
+<details>
+  <summary>See the faceted search example</summary>
+  ```
+  ###03_ExternalDataTemplate.fusion###
+  ```
+</details>
+
 
 ## Debugging Elasticsearch queries
 
@@ -316,6 +345,13 @@ TODO: example how an indexer might look like.
    cat req.json | http 127.0.0.1:9200/neoscr,foo/_search
    ```
 
+## Developing
+
+We gladly accept pull requests or contributors :-)
+
+### Changing this readme
+
+First change Documentation/README_template.php; then run `php Documentation/build_readme.php`.
 
 ## License
 
