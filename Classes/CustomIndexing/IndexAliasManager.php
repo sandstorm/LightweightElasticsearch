@@ -1,11 +1,19 @@
 <?php
 namespace Sandstorm\LightweightElasticsearch\CustomIndexing;
 
+use Flowpack\ElasticSearch\ContentRepositoryAdaptor\Indexer\NodeIndexer;
 use Neos\Flow\Annotations as Flow;
 use Flowpack\ElasticSearch\ContentRepositoryAdaptor\Driver\IndexDriverInterface;
 use Flowpack\ElasticSearch\ContentRepositoryAdaptor\Exception;
 use Flowpack\ElasticSearch\Transfer\Exception\ApiException;
 
+/**
+ * Extracted from {@see NodeIndexer::updateIndexAlias()}; and made generic.
+ *
+ * You do not need this directly; but can use {@see CustomIndexer} instead.
+ *
+ * @internal
+ */
 class IndexAliasManager
 {
 

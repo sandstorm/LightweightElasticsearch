@@ -44,6 +44,11 @@ class SearchResultDocument implements ProtectedContextAwareInterface
         return $this->hit['_source'][$key] ?? null;
     }
 
+    public function getProperties(): array
+    {
+        return $this->hit['_source'] ?? [];
+    }
+
     public function allowsCallOfMethod($methodName)
     {
         return true;

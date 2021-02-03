@@ -1,0 +1,68 @@
+prototype(My.Package:Search) < prototype(Neos.Fusion:Component) {
+    // for possibilities on how to build the query, see the next section in the documentation
+    @context.mainSearchRequest = ${Elasticsearch.createRequest(site).query(Elasticsearch.createNeosFulltextQuery(site).fulltext(request.arguments.q))}
+
+    // Search Result Display is controlled through Flowpack.Listable
+    searchResults = Flowpack.Listable:PaginatedCollection {
+        collection = ${mainSearchRequest}
+        itemsPerPage = 12
+
+        // we use cache mode "dynamic" for the full Search component; so we do not need an additional cache entry
+        // for the PaginatedCollection.
+        @cache.mode = "embed"
+    }
+    renderer = afx`
+        <form action="." method="get">
+            <input name="q" value={request.arguments.q}/>
+            <button type="submit">Search</button>
+
+            <div @if.isError={mainSearchRequest.execute().error}>
+                There was an error executing the search request. Please try again in a few minutes.
+            </div>
+            <p>Showing {mainSearchRequest.execute().count()} of {mainSearchRequest.execute().total()} results</p>
+
+            {props.searchResults}
+        </form>
+    `
+    // If you want to see the full request going to Elasticsearch, you can include
+    // the following snippet in the renderer above:
+    // <Neos.Fusion:Debug v={Json.stringify(mainSearchRequest.requestForDebugging())} />
+
+    // The parameter "q" should be included in this pagination
+    prototype(Flowpack.Listable:PaginationParameters) {
+        q = ${request.arguments.q}
+    }
+
+    // We configure the cache mode "dynamic" here.
+    @cache {
+        mode = 'dynamic'
+        entryIdentifier {
+            node = ${node}
+            type = 'searchForm'
+        }
+        entryDiscriminator = ${request.arguments.q + '-' + request.arguments.currentPage}
+        context {
+            1 = 'node'
+            2 = 'documentNode'
+            3 = 'site'
+        }
+        entryTags {
+            1 = ${Neos.Caching.nodeTag(node)}
+        }
+    }
+}
+
+// The result display is done here.
+// In the context, you'll find an object `searchResultDocument` which is of type
+// Sandstorm\LightweightElasticsearch\Query\Result\SearchResultDocument.
+prototype(Sandstorm.LightweightElasticsearch:SearchResultCase) {
+    neosNodes {
+        // all Documents in the index which are Nodes have a property "index_discriminator" set to "neos_nodes";
+        // This is in preparation for displaying other kinds of data.
+        condition = ${searchResultDocument.property('index_discriminator') == 'neos_nodes'}
+        renderer.@context.node = ${searchResultDocument.loadNode()}
+        renderer = afx`
+            <Neos.Neos:NodeLink node={node} />
+        `
+    }
+}

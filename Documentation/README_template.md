@@ -13,7 +13,7 @@ The project has the following goals and limitations:
 
   This means only document nodes or anything which can potentially appear in fulltext search results is put into
   the Elasticsearch index (everything marked in the NodeTypes as `search.fulltext.isRoot = TRUE`).
-  That means (by default) no content nodes or ContentCollections are stored inside the index. 
+  That means (by default) no content nodes or ContentCollections are stored inside the index.
 
 - **Easier Fulltext indexing implementation**
 
@@ -25,7 +25,7 @@ The project has the following goals and limitations:
   We provide examples and utilities how other data sources can be indexed in Elasticsearch.
 
 - **More flexible and simple Query API**
-  
+
   The Query API is aligned to the Elasticsearch API; and it is possible to write arbitrary Elasticsearch Search
   queries. We do not support the `Neos\Flow\Persistence\QueryResultInterface`, and thus no `<f:widget.paginate>`
   to keep things simple.
@@ -50,10 +50,10 @@ The project has the following goals and limitations:
 
   Building a huge Elasticsearch request for all facets and queries at the same time is possible, but
   hard to debug and understand.
-  
+
   That's why we keep it simple here; and if you use aggregations, there will be one query per aggregation
   which is done.
-  
+
 
 ## Starting Elasticsearch for development
 
@@ -95,75 +95,8 @@ curl -X GET "localhost:9200/neoscr/_search?pretty" -H 'Content-Type: application
 As the search component usually needs to be heavily adjusted, we only include a snippet which can be copy/pasted
 and adjusted into your project:
 
-```
-prototype(My.Package:Search) < prototype(Neos.Fusion:Component) {
-    // for possibilities on how to build the query, see the next section in the documentation
-    @context.mainSearchRequest = ${Elasticsearch.createRequest(site).query(Elasticsearch.createNeosFulltextQuery(site).fulltext(request.arguments.q))}
-    
-    // Search Result Display is controlled through Flowpack.Listable
-    searchResults = Flowpack.Listable:PaginatedCollection {
-        collection = ${mainSearchRequest}
-        itemsPerPage = 12
-
-        // we use cache mode "dynamic" for the full Search component; so we do not need an additional cache entry
-        // for the PaginatedCollection. 
-        @cache.mode = "embed"
-    }
-    renderer = afx`
-        <form action="." method="get">
-            <input name="q" value={request.arguments.q}/>
-            <button type="submit">Search</button>
-
-            <div @if.isError={mainSearchRequest.execute().error}>
-                There was an error executing the search request. Please try again in a few minutes.
-            </div>
-            <p>Showing {mainSearchRequest.execute().count()} of {mainSearchRequest.execute().total()} results</p>
-            
-            {props.searchResults}
-        </form>
-    `
-    // If you want to see the full request going to Elasticsearch, you can include
-    // the following snippet in the renderer above:
-    // <Neos.Fusion:Debug v={Json.stringify(mainSearchRequest.requestForDebugging())} />
- 
-    // The parameter "q" should be included in this pagination
-    prototype(Flowpack.Listable:PaginationParameters) {
-        q = ${request.arguments.q}
-    }
-
-    // We configure the cache mode "dynamic" here.
-    @cache {
-        mode = 'dynamic'
-        entryIdentifier {
-            node = ${node}
-            type = 'searchForm'
-        }
-        entryDiscriminator = ${request.arguments.q + '-' + request.arguments.currentPage}
-        context {
-            1 = 'node'
-            2 = 'documentNode'
-            3 = 'site'
-        }
-        entryTags {
-            1 = ${Neos.Caching.nodeTag(node)}
-        }
-    }
-}
-
-// The result display is done here.
-// In the context, you'll find an object `searchResultDocument` which is of type
-// Sandstorm\LightweightElasticsearch\Query\Result\SearchResultDocument.
-prototype(Sandstorm.LightweightElasticsearch:SearchResultCase) {
-    neosNodes {
-        // all Documents in the index which are Nodes have a property "index_discriminator" set to "neos_nodes";
-        // This is in preparation for displaying other kinds of data.
-        condition = ${searchResultDocument.property('index_discriminator') == 'neos_nodes'}
-        renderer.@context.node = ${searchResultDocument.loadNode()}
-        renderer = afx`
-            <Neos.Neos:NodeLink node={node} />
-        `
-    }
-}
+```neosfusion
+###01_BasicSearchTemplate.fusion###
 ```
 
 ## Query API
