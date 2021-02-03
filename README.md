@@ -217,7 +217,39 @@ More complex queries for searching through multiple indices can look like this:
 
 ## Aggregations and Faceting
 
-For aggregations, we suggest that you start with the following template (which we'll explain one by one):
+Implementing Faceted Search is more difficult than it looks at first sight - so let's first build a mental model
+of how the queries need to work.
+
+Faceting usually looks like:
+
+```
+[ Global Search Input Field ] <-- global info
+
+Categories
+- News
+- FAQ Entries
+- ...
+
+Products
+- Product 1
+- Product 2 (chosen)
+
+[Result Listing]
+```
+
+The global search input field is the easiest - as it influences both the facets (Categories and Products) above,
+and the Result Listing.
+
+For a facet, things are a bit more difficult. To *calculate* the facet values (i.e. what is shown underneath the "Categories"
+headline), an *aggregation query* needs to be executed. In this query, we need to take into account the Global Search field,
+and the choices of all other facets (but not our own one).
+
+For the result listing, we need to take into account the global search, and the choices of all facets.
+
+To model that in Elasticsearch, we recommend to use multiple queries: One for each facet; and one for rendering
+the result listing.
+
+We suggest that you start with the following template (which we'll explain one by one):
 
 ```fusion
 prototype(My.Package:Search) < prototype(Neos.Fusion:Component) {
