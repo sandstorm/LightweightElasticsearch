@@ -191,10 +191,12 @@ Here follows the list of modifications done to the template above:
 You can also copy/paste the full file:
 
 <details>
-  <summary>See the faceted search example</summary>
-  ```
-  ###02_FacetedSearchTemplate.fusion###
-  ```
+<summary>See the faceted search example</summary>
+
+```
+###02_FacetedSearchTemplate.fusion###
+```
+
 </details>
 
 
