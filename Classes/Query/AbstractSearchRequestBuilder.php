@@ -97,7 +97,7 @@ abstract class AbstractSearchRequestBuilder implements ProtectedContextAwareInte
             $timeAfterwards = microtime(true);
 
             $jsonResponse = $response->getTreatedContent();
-            $this->logThisQuery && $this->logger->debug(sprintf('Query Log (%s): Indexname: %s %s -- execution time: %s ms -- Number of results returned: %s -- Total Results: %s', $this->logMessage, implode(',', $indexNames), $request, (($timeAfterwards - $timeBefore) * 1000), count($jsonResponse['hits']['hits']), $jsonResponse['hits']['total']['value']), LogEnvironment::fromMethodName(__METHOD__));
+            $this->logThisQuery && $this->logger->debug(sprintf('Query Log (%s): Indexname: %s %s -- execution time: %s ms -- Number of results returned: %s -- Total Results: %s', $this->logMessage, implode(',', $indexNames), json_encode($request), (($timeAfterwards - $timeBefore) * 1000), count($jsonResponse['hits']['hits']), $jsonResponse['hits']['total']['value']), LogEnvironment::fromMethodName(__METHOD__));
             return $jsonResponse;
         } catch (ApiException $exception) {
             $message = $this->throwableStorage->logThrowable($exception);
