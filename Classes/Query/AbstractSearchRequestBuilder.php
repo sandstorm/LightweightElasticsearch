@@ -4,7 +4,6 @@ declare(strict_types=1);
 namespace Sandstorm\LightweightElasticsearch\Query;
 
 use Neos\ContentRepository\Domain\Model\NodeInterface;
-use Neos\ContentRepository\Utility;
 use Neos\Flow\Annotations as Flow;
 use Flowpack\ElasticSearch\ContentRepositoryAdaptor\ElasticSearchClient;
 use Flowpack\ElasticSearch\Transfer\Exception\ApiException;
@@ -88,9 +87,8 @@ abstract class AbstractSearchRequestBuilder implements ProtectedContextAwareInte
 
             $indexNames = $this->additionalIndices;
             if ($this->contextNode !== null) {
-                $dimensionValues = $this->contextNode->getContext()->getDimensions();
-                $dimensionHash = Utility::sortDimensionValueArrayAndReturnDimensionsHash($dimensionValues);
-                $indexNames[] = 'neoscr-' . $dimensionHash;
+                $this->elasticSearchClient->setContextNode($this->contextNode);
+                $indexNames[] = $this->elasticSearchClient->getIndexName();
             }
 
             $response = $this->elasticSearchClient->request('GET', '/' . implode(',', $indexNames) . '/_search', [], $request);
