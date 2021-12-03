@@ -74,7 +74,6 @@ class DocumentIndexerDriver extends AbstractIndexerDriver implements IndexerDriv
         $indexName = $documentAndIndex['index'];
         assert($document instanceof ElasticSearchDocument);
         $this->tempStorage->offsetUnset($node);
-        var_dump("FULLTEXT");
 
         return [
             [
