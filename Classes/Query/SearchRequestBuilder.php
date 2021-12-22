@@ -5,6 +5,7 @@ namespace Sandstorm\LightweightElasticsearch\Query;
 
 use Neos\Flow\Annotations as Flow;
 use Flowpack\ElasticSearch\Transfer\Exception\ApiException;
+use Sandstorm\LightweightElasticsearch\Query\Highlight\HighlightBuilderInterface;
 use Sandstorm\LightweightElasticsearch\Query\Query\SearchQueryBuilderInterface;
 use Sandstorm\LightweightElasticsearch\Query\Result\SearchResult;
 
@@ -56,6 +57,17 @@ class SearchRequestBuilder extends AbstractSearchRequestBuilder
         }
 
         $this->request['size'] = $size;
+        return $this;
+    }
+
+    public function highlight(HighlightBuilderInterface $highlightBuilder): self
+    {
+        if ($this->searchResult !== null) {
+            // we need to reset the search result cache when the builder is mutated
+            $this->searchResult = null;
+        }
+
+        $this->request['highlight'] = $highlightBuilder->buildHighlightRequestPart();
         return $this;
     }
 

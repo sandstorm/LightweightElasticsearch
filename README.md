@@ -24,6 +24,7 @@ as we build upon this work and profit from it greatly.
     - [Search Component](#search-component)
     - [Query API](#query-api)
     - [Aggregations and Faceting](#aggregations-and-faceting)
+    - [Result Highlighting](#result-highlighting)
     - [Indexing other data](#indexing-other-data)
     - [Querying other data](#querying-other-data)
     - [Debugging Elasticsearch queries](#debugging-elasticsearch-queries)
@@ -708,7 +709,169 @@ prototype(Sandstorm.LightweightElasticsearch:SearchResultCase) {
 
 </details>
 
+## Result Highlighting
 
+Result highlighting is implemented using the [highlight API](https://www.elastic.co/guide/en/elasticsearch/reference/current/highlighting.html)
+of Elasticsearch.
+
+To enable it, you need to change thef following parts:
+
+- To use a default highlighting, add the `.highlight(Elasticsearch.createNeosFulltextHighlight())`
+  part to your main Elasticsearch query.
+- Additionally, you can call the getter `searchResultDocument.processedHighlights` for each
+  result, which contains the highlighted extracts, which you can simply join together like this:
+
+  `Array.join(searchResultDocument.processedHighlights, '…')`
+
+A full example can be found below:
+
+```diff
+@@ -9,7 +9,7 @@
+     // - this._elasticsearchBaseQuery is applied
+     // - this._nodeTypesAggregation is applied as well (if the user chose a facet value)
+     // <-- if you add additional aggregations, you need to add them here to this list.
+-    @context.mainSearchRequest = ${Elasticsearch.createRequest(site).query(Elasticsearch.createBooleanQuery().must(this._elasticsearchBaseQuery).filter(this._nodeTypesAggregation))}
++    @context.mainSearchRequest = ${Elasticsearch.createRequest(site).query(Elasticsearch.createBooleanQuery().must(this._elasticsearchBaseQuery).filter(this._nodeTypesAggregation)).highlight(Elasticsearch.createNeosFulltextHighlight())}
+ 
+     // The Request is for displaying the Node Types aggregation (faceted search).
+     //
+@@ -102,7 +102,9 @@
+         condition = ${searchResultDocument.property('index_discriminator') == 'neos_nodes'}
+         renderer.@context.node = ${searchResultDocument.loadNode()}
+         renderer = afx`
+-            <Neos.Neos:NodeLink node={node} />
++            <Neos.Neos:NodeLink node={node}>
++                {Array.join(searchResultDocument.processedHighlights, '…')}
++            </Neos.Neos:NodeLink>
+         `
+         // If you want to see the full Search Response hit, you can include the following
+         // snippet in the renderer above:
+
+```
+
+You can also copy/paste the full file:
+
+<details>
+<summary>See the faceted + highlighted search example</summary>
+
+```
+prototype(My.Package:Search) < prototype(Neos.Fusion:Component) {
+    // this is the base query from the user which should *always* be applied.
+    _elasticsearchBaseQuery = ${Elasticsearch.createNeosFulltextQuery(site).fulltext(request.arguments.q)}
+
+    // register a Terms aggregation with the URL parameter "nodeTypesFilter"
+    _nodeTypesAggregation = ${Elasticsearch.createTermsAggregation("neos_type", request.arguments.nodeTypesFilter)}
+
+    // This is the main elasticsearch query which determines the search results:
+    // - this._elasticsearchBaseQuery is applied
+    // - this._nodeTypesAggregation is applied as well (if the user chose a facet value)
+    // <-- if you add additional aggregations, you need to add them here to this list.
+    @context.mainSearchRequest = ${Elasticsearch.createRequest(site).query(Elasticsearch.createBooleanQuery().must(this._elasticsearchBaseQuery).filter(this._nodeTypesAggregation)).highlight(Elasticsearch.createNeosFulltextHighlight())}
+
+    // The Request is for displaying the Node Types aggregation (faceted search).
+    //
+    // For faceted search to work properly, we need to add all OTHER query parts as filter; so NOT ourselves.
+    // This means, for the `.aggregation()` part, we take the aggregation itself.
+    // For the `.filter()` part, we add:
+    // - this._elasticsearchBaseQuery to ensure the entered query string by the user is taken into account
+    // <-- if you add additional aggregations, you need to add them here to the list.
+    @context.nodeTypesFacet = ${Elasticsearch.createAggregationRequest(site).aggregation(this._nodeTypesAggregation).filter(this._elasticsearchBaseQuery).execute()}
+
+    // Search Result Display is controlled through Flowpack.Listable
+    searchResults = Flowpack.Listable:PaginatedCollection {
+        collection = ${mainSearchRequest}
+        itemsPerPage = 12
+
+        // we use cache mode "dynamic" for the full Search component; so we do not need an additional cache entry
+        // for the PaginatedCollection.
+        @cache.mode = "embed"
+    }
+
+    nodeTypesFacet = Neos.Fusion:Component {
+        // the nodeTypesFacet is a "Terms" aggregation...
+        // ...so we can access nodeTypesFacet.buckets.
+        // To build a link to the facet, we use Neos.Neos:NodeLink with two additions:
+        // - addQueryString must be set to TRUE, to keep the search query and potentially other facets.
+        // - to build the arguments, we need to set `nodeTypesFilter` to the current bucket key (or to null in case we want to clear the facet)
+        renderer = afx`
+            <ul>
+                <Neos.Fusion:Loop items={nodeTypesFacet.buckets} itemName="bucket">
+                    <li><Neos.Neos:NodeLink node={documentNode} addQueryString={true} arguments={{nodeTypesFilter: bucket.key}}>{bucket.key}</Neos.Neos:NodeLink> {bucket.doc_count} <span @if.isTrue={bucket.key == nodeTypesFacet.selectedValue}>(selected)</span></li>
+                </Neos.Fusion:Loop>
+            </ul>
+            <Neos.Neos:NodeLink @if.isTrue={nodeTypesFacet.selectedValue} node={documentNode} addQueryString={true} arguments={{nodeTypesFilter: null}}>CLEAR FACET</Neos.Neos:NodeLink>
+        `
+    }
+
+    renderer = afx`
+        <form action="." method="get">
+            <input name="q" value={request.arguments.q}/>
+            <button type="submit">Search</button>
+
+            <div @if.isError={mainSearchRequest.execute().error}>
+                There was an error executing the search request. Please try again in a few minutes.
+            </div>
+            <p>Showing {mainSearchRequest.execute().count()} of {mainSearchRequest.execute().total()} results</p>
+
+            {props.nodeTypesFacet}
+
+            {props.searchResults}
+        </form>
+    `
+    // If you want to see the full request going to Elasticsearch, you can include
+    // the following snippet in the renderer above:
+    // <Neos.Fusion:Debug v={Json.stringify(mainSearchRequest.requestForDebugging())} />
+
+    // The parameter "q" should be included in this pagination
+    prototype(Flowpack.Listable:PaginationParameters) {
+        q = ${request.arguments.q}
+        // <-- if you add additional aggregations, you need to add the parameter names here
+        nodeTypesFilter = ${request.arguments.nodeTypesFilter}
+    }
+
+    // We configure the cache mode "dynamic" here.
+    @cache {
+        mode = 'dynamic'
+        entryIdentifier {
+            node = ${node}
+            type = 'searchForm'
+        }
+        // <-- if you add additional aggregations, you need to add the parameter names to the entryDiscriminator
+        entryDiscriminator = ${request.arguments.q + '-' + request.arguments.currentPage + '-' + request.arguments.nodeTypesFilter}
+        context {
+            1 = 'node'
+            2 = 'documentNode'
+            3 = 'site'
+        }
+        entryTags {
+            1 = ${Neos.Caching.nodeTag(node)}
+        }
+    }
+}
+
+// The result display is done here.
+// In the context, you'll find an object `searchResultDocument` which is of type
+// Sandstorm\LightweightElasticsearch\Query\Result\SearchResultDocument.
+prototype(Sandstorm.LightweightElasticsearch:SearchResultCase) {
+    neosNodes {
+        // all Documents in the index which are Nodes have a property "index_discriminator" set to "neos_nodes";
+        // This is in preparation for displaying other kinds of data.
+        condition = ${searchResultDocument.property('index_discriminator') == 'neos_nodes'}
+        renderer.@context.node = ${searchResultDocument.loadNode()}
+        renderer = afx`
+            <Neos.Neos:NodeLink node={node}>
+                {Array.join(searchResultDocument.processedHighlights, '…')}
+            </Neos.Neos:NodeLink>
+        `
+        // If you want to see the full Search Response hit, you can include the following
+        // snippet in the renderer above:
+        // <Neos.Fusion:Debug result={searchResultDocument.fullSearchHit} />
+    }
+}
+
+```
+
+</details>
 
 
 ## Indexing other data

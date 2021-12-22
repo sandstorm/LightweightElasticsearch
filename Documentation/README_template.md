@@ -24,6 +24,7 @@ as we build upon this work and profit from it greatly.
     - [Search Component](#search-component)
     - [Query API](#query-api)
     - [Aggregations and Faceting](#aggregations-and-faceting)
+    - [Result Highlighting](#result-highlighting)
     - [Indexing other data](#indexing-other-data)
     - [Querying other data](#querying-other-data)
     - [Debugging Elasticsearch queries](#debugging-elasticsearch-queries)
@@ -446,7 +447,36 @@ You can also copy/paste the full file:
 
 </details>
 
+## Result Highlighting
 
+Result highlighting is implemented using the [highlight API](https://www.elastic.co/guide/en/elasticsearch/reference/current/highlighting.html)
+of Elasticsearch.
+
+To enable it, you need to change thef following parts:
+
+- To use a default highlighting, add the `.highlight(Elasticsearch.createNeosFulltextHighlight())`
+  part to your main Elasticsearch query.
+- Additionally, you can call the getter `searchResultDocument.processedHighlights` for each
+  result, which contains the highlighted extracts, which you can simply join together like this:
+
+  `Array.join(searchResultDocument.processedHighlights, '…')`
+
+A full example can be found below:
+
+```diff
+###02a_FacetedHighlightedSearchTemplate.fusion.diff###
+```
+
+You can also copy/paste the full file:
+
+<details>
+<summary>See the faceted + highlighted search example</summary>
+
+```
+###02a_FacetedHighlightedSearchTemplate.fusion###
+```
+
+</details>
 
 
 ## Indexing other data

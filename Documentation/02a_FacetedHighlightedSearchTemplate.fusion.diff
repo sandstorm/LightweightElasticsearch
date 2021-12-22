@@ -1,0 +1,20 @@
+@@ -9,7 +9,7 @@
+     // - this._elasticsearchBaseQuery is applied
+     // - this._nodeTypesAggregation is applied as well (if the user chose a facet value)
+     // <-- if you add additional aggregations, you need to add them here to this list.
+-    @context.mainSearchRequest = ${Elasticsearch.createRequest(site).query(Elasticsearch.createBooleanQuery().must(this._elasticsearchBaseQuery).filter(this._nodeTypesAggregation))}
++    @context.mainSearchRequest = ${Elasticsearch.createRequest(site).query(Elasticsearch.createBooleanQuery().must(this._elasticsearchBaseQuery).filter(this._nodeTypesAggregation)).highlight(Elasticsearch.createNeosFulltextHighlight())}
+ 
+     // The Request is for displaying the Node Types aggregation (faceted search).
+     //
+@@ -102,7 +102,9 @@
+         condition = ${searchResultDocument.property('index_discriminator') == 'neos_nodes'}
+         renderer.@context.node = ${searchResultDocument.loadNode()}
+         renderer = afx`
+-            <Neos.Neos:NodeLink node={node} />
++            <Neos.Neos:NodeLink node={node}>
++                {Array.join(searchResultDocument.processedHighlights, '…')}
++            </Neos.Neos:NodeLink>
+         `
+         // If you want to see the full Search Response hit, you can include the following
+         // snippet in the renderer above:

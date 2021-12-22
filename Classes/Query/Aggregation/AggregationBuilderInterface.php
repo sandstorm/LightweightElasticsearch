@@ -17,7 +17,7 @@ interface AggregationBuilderInterface
     public function buildAggregationRequest(): array;
 
     /**
-     * Binds the aggreation response to this aggregation; effectively creating an aggregation response object
+     * Binds the aggregation response to this aggregation; effectively creating an aggregation response object
      * for this request.
      *
      * Is called by the framework (usually inside {@see AggregationRequestBuilder}, not by the end-user.

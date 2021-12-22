@@ -18,6 +18,7 @@ use Neos\Flow\Mvc\ActionRequest;
 use Neos\ContentRepository\Domain\Model\NodeInterface;
 use Sandstorm\LightweightElasticsearch\Query\Aggregation\AggregationsBuilder;
 use Sandstorm\LightweightElasticsearch\Query\Aggregation\TermsAggregationBuilder;
+use Sandstorm\LightweightElasticsearch\Query\Highlight\NeosFulltextHighlightBuilder;
 use Sandstorm\LightweightElasticsearch\Query\Query\BooleanQueryBuilder;
 use Sandstorm\LightweightElasticsearch\Query\Query\NeosFulltextQueryBuilder;
 use Sandstorm\LightweightElasticsearch\Query\Query\TermQueryBuilder;
@@ -73,6 +74,11 @@ class ElasticsearchHelper implements ProtectedContextAwareInterface
     public function createTermsAggregation(string $fieldName, ?string $selectedValue = null): TermsAggregationBuilder
     {
         return TermsAggregationBuilder::create($fieldName, $selectedValue);
+    }
+
+    public function createNeosFulltextHighlight(int $fragmentSize = 150, int $fragmentCount = 2): NeosFulltextHighlightBuilder
+    {
+        return NeosFulltextHighlightBuilder::create($fragmentSize, $fragmentCount);
     }
 
     public function allowsCallOfMethod($methodName)

@@ -49,6 +49,26 @@ class SearchResultDocument implements ProtectedContextAwareInterface
         return $this->hit['_source'] ?? [];
     }
 
+    /**
+     * all highlights as a flat array of strings, no matter which field they were found in
+     * @return string[]
+     */
+    public function getProcessedHighlights(): array
+    {
+        $highlights = $this->hit['highlight'] ?? [];
+        $processedHighlights = [];
+        foreach ($highlights as $field => $highlightArray) {
+            if (is_string($highlightArray)) {
+                $highlightArray = [$highlightArray];
+            }
+            foreach ($highlightArray as $highlight) {
+                $processedHighlights[] = $highlight;
+            }
+        }
+
+        return $processedHighlights;
+    }
+
     public function allowsCallOfMethod($methodName)
     {
         return true;
