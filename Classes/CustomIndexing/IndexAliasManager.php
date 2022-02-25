@@ -1,4 +1,4 @@
-g<?php
+<?php
 namespace Sandstorm\LightweightElasticsearch\CustomIndexing;
 
 use Flowpack\ElasticSearch\ContentRepositoryAdaptor\Indexer\NodeIndexer;
