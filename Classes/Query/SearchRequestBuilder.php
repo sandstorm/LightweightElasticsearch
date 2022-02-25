@@ -60,6 +60,17 @@ class SearchRequestBuilder extends AbstractSearchRequestBuilder
         return $this;
     }
 
+    public function minScore(float $minScore): self
+    {
+        if ($this->searchResult !== null) {
+            // we need to reset the search result cache when the builder is mutated
+            $this->searchResult = null;
+        }
+
+        $this->request['min_score'] = $minScore;
+        return $this;
+    }
+
     public function highlight(HighlightBuilderInterface $highlightBuilder): self
     {
         if ($this->searchResult !== null) {
