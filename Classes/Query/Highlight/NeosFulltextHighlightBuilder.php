@@ -3,15 +3,17 @@
 
 namespace Sandstorm\LightweightElasticsearch\Query\Highlight;
 
+use Neos\Eel\ProtectedContextAwareInterface;
 use Neos\Flow\Annotations as Flow;
 
 /**
  * @Flow\Proxy(false)
  */
-final class NeosFulltextHighlightBuilder implements HighlightBuilderInterface
+final class NeosFulltextHighlightBuilder implements HighlightBuilderInterface, ProtectedContextAwareInterface
 {
     private int $fragmentSize;
     private ?int $fragmentCount;
+    private array $extraHighlightFields = [];
 
     public static function create(int $fragmentSize, int $fragmentCount = null): self
     {
@@ -24,10 +26,21 @@ final class NeosFulltextHighlightBuilder implements HighlightBuilderInterface
         $this->fragmentCount = $fragmentCount;
     }
 
-
-    public function buildHighlightRequestPart(): array
+    /**
+     * add an extra field to the fulltext
+     *
+     * @param string $fieldName
+     * @return $this
+     */
+    public function extraField(string $fieldName): self
     {
-        return [
+        $this->extraHighlightFields[] = $fieldName;
+        return $this;
+    }
+
+    public function buildHighlightRequestPart(array $extraFields = []): array
+    {
+        $highlightRequestPart = [
             'fields' => [
                 'neos_fulltext*' => [
                     'fragment_size' => $this->fragmentSize,
@@ -36,5 +49,16 @@ final class NeosFulltextHighlightBuilder implements HighlightBuilderInterface
                 ]
             ]
         ];
+
+        foreach ($this->extraHighlightFields as $fieldName) {
+            $highlightRequestPart['fields'][$fieldName] = $highlightRequestPart['fields']['neos_fulltext*'];
+        }
+
+        return $highlightRequestPart;
+    }
+
+    public function allowsCallOfMethod($methodName)
+    {
+        return true;
     }
 }
