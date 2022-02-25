@@ -1,4 +1,4 @@
-<?php
+g<?php
 namespace Sandstorm\LightweightElasticsearch\CustomIndexing;
 
 use Flowpack\ElasticSearch\ContentRepositoryAdaptor\Indexer\NodeIndexer;
@@ -57,10 +57,10 @@ class IndexAliasManager
                 $this->indexDriver->deleteIndex($aliasName);
             } else {
                 // Remove all existing aliasses
-                foreach ($indexNames as $indexName) {
+                foreach ($indexNames as $indexNameToRemove) {
                     $aliasActions[] = [
                         'remove' => [
-                            'index' => $indexName,
+                            'index' => $indexNameToRemove,
                             'alias' => $aliasName
                         ]
                     ];
