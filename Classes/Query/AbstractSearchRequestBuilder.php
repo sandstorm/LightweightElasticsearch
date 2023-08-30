@@ -5,12 +5,12 @@ namespace Sandstorm\LightweightElasticsearch\Query;
 
 use Neos\ContentRepository\Domain\Model\NodeInterface;
 use Neos\Flow\Annotations as Flow;
-use Flowpack\ElasticSearch\ContentRepositoryAdaptor\ElasticSearchClient;
 use Flowpack\ElasticSearch\Transfer\Exception\ApiException;
 use Neos\Eel\ProtectedContextAwareInterface;
 use Neos\Flow\Log\ThrowableStorageInterface;
 use Neos\Flow\Log\Utility\LogEnvironment;
 use Psr\Log\LoggerInterface;
+use Sandstorm\LightweightElasticsearch\Elasticsearch\ElasticsearchClient;
 
 
 abstract class AbstractSearchRequestBuilder implements ProtectedContextAwareInterface
@@ -18,7 +18,7 @@ abstract class AbstractSearchRequestBuilder implements ProtectedContextAwareInte
 
     /**
      * @Flow\Inject
-     * @var ElasticSearchClient
+     * @var ElasticsearchClient
      */
     protected $elasticSearchClient;
 
@@ -88,7 +88,7 @@ abstract class AbstractSearchRequestBuilder implements ProtectedContextAwareInte
             $indexNames = $this->additionalIndices;
             if ($this->contextNode !== null) {
                 $this->elasticSearchClient->setContextNode($this->contextNode);
-                $indexNames[] = $this->elasticSearchClient->getIndexName();
+                $indexNames[] = $this->elasticSearchClient->getIndexNamePrefix();
             }
 
             $response = $this->elasticSearchClient->request('GET', '/' . implode(',', $indexNames) . '/_search', [], $request);

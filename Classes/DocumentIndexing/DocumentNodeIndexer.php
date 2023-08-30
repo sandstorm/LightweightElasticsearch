@@ -23,11 +23,11 @@ use Sandstorm\LightweightElasticsearch\DocumentIndexing\DocumentIndexerDriver;
  * The overridden {@see DocumentIndexerDriver} takes care of sending only a single Elasticsearch request for
  * each document.
  */
-class DocumentNodeIndexer extends NodeIndexer
+class DocumentNodeIndexer
 {
 
     public function setIndexNamePostfix(string $indexNamePostfix): void {
-        parent::setIndexNamePostfix($indexNamePostfix);
+        //parent::setIndexNamePostfix($indexNamePostfix);
     }
 
     /**
@@ -41,12 +41,12 @@ class DocumentNodeIndexer extends NodeIndexer
             return;
         }
 
-        parent::indexNode($node, $targetWorkspaceName);
+        //parent::indexNode($node, $targetWorkspaceName);
     }
 
     protected function extractPropertiesAndFulltext(NodeInterface $node, array &$fulltextData, \Closure $nonIndexedPropertyErrorHandler = null): array
     {
-        $result = parent::extractPropertiesAndFulltext($node, $fulltextData, $nonIndexedPropertyErrorHandler);
+        //$result = parent::extractPropertiesAndFulltext($node, $fulltextData, $nonIndexedPropertyErrorHandler);
 
         foreach ($node->getChildNodes('Neos.Neos:Content,Neos.Neos:ContentCollection') as $childNode) {
             $this->enrichWithFulltextForContentNodes($childNode, $fulltextData);

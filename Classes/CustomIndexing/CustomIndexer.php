@@ -35,19 +35,19 @@ use Flowpack\ElasticSearch\Domain\Model\Mapping;
 class CustomIndexer
 {
     /**
-     * @Flow\Inject
+     * _Flow\Inject
      * @var ClientFactory
      */
     protected $clientFactory;
 
     /**
-     * @Flow\Inject
+     * _Flow\Inject
      * @var IndexAliasManager
      */
     protected $indexAliasManager;
 
     /**
-     * @Flow\Inject
+     * _Flow\Inject
      * @var IndexDriverInterface
      */
     protected $indexDriver;

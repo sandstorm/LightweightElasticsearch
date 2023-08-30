@@ -4,7 +4,8 @@
     "name": "sandstorm/lightweightelasticsearch",
     "require": {
         "neos/flow": "*",
-        "flowpack/elasticsearch-contentrepositoryadaptor": "*",
+        "neos/content-repository-search": "*",
+        "flowpack/elasticsearch": "^5.0 || dev-master",
         "flowpack/listable": "*"
     },
     "autoload": {

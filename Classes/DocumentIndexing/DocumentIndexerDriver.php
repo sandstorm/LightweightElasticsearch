@@ -36,7 +36,7 @@ use Sandstorm\LightweightElasticsearch\DocumentIndexing\DocumentNodeIndexer;
  *
  * @Flow\Scope("singleton")
  */
-class DocumentIndexerDriver extends AbstractIndexerDriver implements IndexerDriverInterface
+class DocumentIndexerDriver
 {
     /**
      * @var \SplObjectStorage

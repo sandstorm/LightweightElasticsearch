@@ -25,3 +25,8 @@ Sandstorm:
     # either "log" or "throw". For dev, we want to throw elasticsearch exceptions;
     # for prod, we want to log them.
     handleElasticsearchExceptions: log
+
+
+
+    elasticsearch:
+      baseUrl: http://127.0.0.1:9200

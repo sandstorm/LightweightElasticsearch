@@ -6,6 +6,7 @@ use Neos\Flow\Annotations as Flow;
 use Flowpack\ElasticSearch\ContentRepositoryAdaptor\Driver\IndexDriverInterface;
 use Flowpack\ElasticSearch\ContentRepositoryAdaptor\Exception;
 use Flowpack\ElasticSearch\Transfer\Exception\ApiException;
+use Sandstorm\LightweightElasticsearch\Elasticsearch\ElasticsearchClient;
 
 /**
  * Extracted from {@see NodeIndexer::updateIndexAlias()}; and made generic.
@@ -19,13 +20,13 @@ class IndexAliasManager
 
     /**
      * @Flow\Inject
-     * @var \Flowpack\ElasticSearch\ContentRepositoryAdaptor\ElasticSearchClient
+     * @var ElasticsearchClient
      */
     protected $searchClient;
 
     /**
      * @var IndexDriverInterface
-     * @Flow\Inject
+     * _Flow\Inject
      */
     protected $indexDriver;
 
