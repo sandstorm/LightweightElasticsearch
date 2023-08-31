@@ -7,7 +7,9 @@ use Sandstorm\LightweightElasticsearch\ElasticsearchApiClient\ApiCalls\AliasActi
 use Sandstorm\LightweightElasticsearch\ElasticsearchApiClient\ApiCalls\AliasApiCalls;
 use Sandstorm\LightweightElasticsearch\ElasticsearchApiClient\ApiCalls\BulkApiCalls;
 use Sandstorm\LightweightElasticsearch\ElasticsearchApiClient\ApiCalls\IndexApiCalls;
+use Sandstorm\LightweightElasticsearch\ElasticsearchApiClient\ApiCalls\IngestPipelineApiCalls;
 use Sandstorm\LightweightElasticsearch\ElasticsearchApiClient\ApiCalls\SearchApiCalls;
+use Sandstorm\LightweightElasticsearch\ElasticsearchApiClient\Dto\AssetContent;
 use Sandstorm\LightweightElasticsearch\Settings\CreateIndexParameters;
 use Sandstorm\LightweightElasticsearch\SharedModel\AliasName;
 use Sandstorm\LightweightElasticsearch\SharedModel\ElasticsearchBaseUrl;
@@ -28,6 +30,7 @@ class ElasticsearchApiClient
         private readonly AliasApiCalls $aliasApi,
         private readonly IndexApiCalls $indexApi,
         private readonly BulkApiCalls $bulkApi,
+        private readonly IngestPipelineApiCalls $ingestPipelineApi,
         private readonly SearchApiCalls $searchApi,
     ) {
     }
@@ -81,5 +84,10 @@ class ElasticsearchApiClient
     public function updateAliases(AliasActionsBuilder $actions): void
     {
         $this->aliasApi->updateAliases($this->apiCaller, $this->baseUrl, $actions);
+    }
+
+    public function ingestPipelineSimulate(array $request): array
+    {
+        return $this->ingestPipelineApi->simulate($this->apiCaller, $this->baseUrl, $request);
     }
 }

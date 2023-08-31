@@ -5,6 +5,8 @@ namespace Sandstorm\LightweightElasticsearch\Indexing;
 use Neos\ContentRepository\Core\Projection\ContentGraph\Node;
 use Neos\Eel\EelEvaluatorInterface;
 use Neos\Eel\Utility as EelUtility;
+use Sandstorm\LightweightElasticsearch\Elasticsearch;
+use Sandstorm\LightweightElasticsearch\Indexing\Eel\IndexingHelper;
 use Sandstorm\LightweightElasticsearch\Settings\ElasticsearchSettings;
 use Sandstorm\LightweightElasticsearch\Settings\PropertySearchSettings;
 
@@ -26,14 +28,14 @@ class IndexingEelEvaluator
      */
     protected ?array $defaultContextVariables = null;
 
-    public function runPropertyIndexingExpression(PropertySearchSettings $propertySearchSettings, Node $node): mixed
+    public function runPropertyIndexingExpression(PropertySearchSettings $propertySearchSettings, Node $node, Elasticsearch $elasticsearch): mixed
     {
-        return $this->evaluate($propertySearchSettings->indexingEelExpression, $node, $propertySearchSettings->propertyName);
+        return $this->evaluate($propertySearchSettings->indexingEelExpression, $node, $propertySearchSettings->propertyName, $elasticsearch);
     }
 
-    public function runFulltextExpression(PropertySearchSettings $propertySearchSettings, Node $node, array &$fulltextIndex): void
+    public function runFulltextExpression(PropertySearchSettings $propertySearchSettings, Node $node, array &$fulltextIndex, Elasticsearch $elasticsearch): void
     {
-        $extractedFulltext = $this->evaluate($propertySearchSettings->fulltextExtractorEelExpression, $node, $propertySearchSettings->propertyName);
+        $extractedFulltext = $this->evaluate($propertySearchSettings->fulltextExtractorEelExpression, $node, $propertySearchSettings->propertyName, $elasticsearch);
 
         if (!is_array($extractedFulltext)) {
             throw new \RuntimeException('The fulltext index for property "' . $propertySearchSettings->propertyName . '" of node "' . $node->nodeAggregateId->value . '" could not be retrieved; the Eel expression "' . $propertySearchSettings->fulltextExtractorEelExpression . '" is no valid fulltext extraction expression.', 1693468443);
@@ -59,8 +61,11 @@ class IndexingEelEvaluator
      * @param string $propertyName
      * @return mixed The result of the evaluated Eel expression
      */
-    private function evaluate(string $expression, Node $node, string $propertyName): mixed
+    private function evaluate(string $expression, Node $node, string $propertyName, Elasticsearch $elasticsearch): mixed
     {
+        // WORKAROUND: make Elasticsearch available to IndexingHelper (so that it can call AssetExtractor correctly)
+        IndexingHelper::$elasticsearch = $elasticsearch;
+
         if ($this->defaultContextVariables === null) {
             $this->defaultContextVariables = EelUtility::getDefaultContextVariables($this->settings->defaultContext);
         }

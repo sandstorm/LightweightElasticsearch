@@ -5,7 +5,6 @@ namespace Sandstorm\LightweightElasticsearch\ElasticsearchApiClient\ApiCalls;
 use Sandstorm\LightweightElasticsearch\ElasticsearchApiClient\ApiCaller;
 use Sandstorm\LightweightElasticsearch\SharedModel\AliasName;
 use Sandstorm\LightweightElasticsearch\SharedModel\ElasticsearchBaseUrl;
-use Sandstorm\LightweightElasticsearch\SharedModel\IndexName;
 
 class SearchApiCalls
 {

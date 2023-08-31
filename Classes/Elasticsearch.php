@@ -70,13 +70,14 @@ class Elasticsearch
         private readonly NodeTypeMappingBuilder $nodeTypeMappingBuilder,
         private readonly SubgraphIndexer $documentIndexer,
         private readonly AliasManager $aliasManager,
+        public readonly LoggerInterface $logger
     ) {
     }
 
     /**
      * Index a workspace into Elasticsearch, by indexing all DimensionSpacePoints separately.
      */
-    public function indexWorkspace(WorkspaceName $workspaceName, LoggerInterface $logger): void
+    public function indexWorkspace(WorkspaceName $workspaceName): void
     {
         $workspace = $this->contentRepository->getWorkspaceFinder()->findOneByName($workspaceName);
         if ($workspace === null) {
@@ -91,23 +92,23 @@ class Elasticsearch
             $indexName = IndexName::createForAlias($aliasName, IndexGeneration::createFromCurrentTime());
 
             // 1) Create Index & Mapping
-            $logger->info('Dimension space point: ' . $dimensionSpacePoint->toJson() . ' -> Creating Index: ' . $indexName->value);
+            $this->logger->info('Dimension space point: ' . $dimensionSpacePoint->toJson() . ' -> Creating Index: ' . $indexName->value);
             if ($this->apiClient->hasIndex($indexName)) {
-                $logger->info('  Index exists, removing and recreating');
+                $this->logger->info('  Index exists, removing and recreating');
                 $this->apiClient->removeIndex($indexName);
             }
             $this->apiClient->createIndex($indexName, $this->settings->createIndexParameters($indexName));
 
-            $mappingDefinition = $this->nodeTypeMappingBuilder->build($this->contentRepository->getNodeTypeManager(), $logger);
+            $mappingDefinition = $this->nodeTypeMappingBuilder->build($this->contentRepository->getNodeTypeManager());
             $this->apiClient->updateMapping($indexName, $mappingDefinition);
 
             // 2) Index nodes
-            $logger->info('Dimension space point: ' . $dimensionSpacePoint->toJson() . ' -> Indexing nodes into: ' . $indexName->value);
+            $this->logger->info('Dimension space point: ' . $dimensionSpacePoint->toJson() . ' -> Indexing nodes into: ' . $indexName->value);
             $subgraph = $this->contentRepository->getContentGraph()->getSubgraph($workspace->currentContentStreamId, $dimensionSpacePoint, VisibilityConstraints::frontend());
-            $this->documentIndexer->indexSubgraph($subgraph, $workspace, $indexName, $logger);
+            $this->documentIndexer->indexSubgraph($subgraph, $workspace, $indexName, $this);
 
             // 3) Create/switch alias
-            $logger->info('Dimension space point: ' . $dimensionSpacePoint->toJson() . ' -> updating aliases');
+            $this->logger->info('Dimension space point: ' . $dimensionSpacePoint->toJson() . ' -> updating aliases');
             $this->aliasManager->updateIndexAlias($aliasName, $indexName);
         }
     }

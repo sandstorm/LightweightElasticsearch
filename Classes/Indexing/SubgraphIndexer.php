@@ -12,6 +12,7 @@ use Neos\ContentRepository\Core\Projection\Workspace\Workspace;
 use Neos\ContentRepository\Core\SharedModel\Node\NodeAggregateId;
 use Neos\Flow\Log\Utility\LogEnvironment;
 use Psr\Log\LoggerInterface;
+use Sandstorm\LightweightElasticsearch\Elasticsearch;
 use Sandstorm\LightweightElasticsearch\Settings\ElasticsearchSettings;
 use Sandstorm\LightweightElasticsearch\Settings\NodeTypeSearchSettings;
 use Sandstorm\LightweightElasticsearch\SharedModel\IndexName;
@@ -31,16 +32,16 @@ class SubgraphIndexer
     ) {
     }
 
-    public function indexSubgraph(ContentSubgraphInterface $subgraph, Workspace $workspace, IndexName $indexName, LoggerInterface $logger): void
+    public function indexSubgraph(ContentSubgraphInterface $subgraph, Workspace $workspace, IndexName $indexName, Elasticsearch $elasticsearch): void
     {
         $bulkRequestSender = $this->bulkRequestSenderFactory->withIndexName($indexName);
         // TODO: single site??
         $node = $subgraph->findRootNodeByType(NodeTypeName::fromString('Neos.Neos:Sites')); // TODO
-        $this->indexDocumentNodesRecursively($node->nodeAggregateId, $subgraph, $workspace, $bulkRequestSender, $logger);
+        $this->indexDocumentNodesRecursively($node->nodeAggregateId, $subgraph, $workspace, $bulkRequestSender, $elasticsearch);
         $bulkRequestSender->close();
     }
 
-    private function indexDocumentNodesRecursively(NodeAggregateId $parentNodeAggregateId, ContentSubgraphInterface $subgraph, Workspace $workspace, BulkRequestSender $bulkRequestSender, LoggerInterface $logger)
+    private function indexDocumentNodesRecursively(NodeAggregateId $parentNodeAggregateId, ContentSubgraphInterface $subgraph, Workspace $workspace, BulkRequestSender $bulkRequestSender, Elasticsearch $elasticsearch): void
     {
         $documentNodes = $subgraph->findChildNodes(
             $parentNodeAggregateId,
@@ -50,35 +51,35 @@ class SubgraphIndexer
         );
 
         foreach ($documentNodes as $childNode) {
-            $this->indexDocumentNodeAndContent($childNode, $subgraph, $workspace, $bulkRequestSender, $logger);
+            $this->indexDocumentNodeAndContent($childNode, $subgraph, $workspace, $bulkRequestSender, $elasticsearch);
 
-            $this->indexDocumentNodesRecursively($childNode->nodeAggregateId, $subgraph, $workspace, $bulkRequestSender, $logger);
+            $this->indexDocumentNodesRecursively($childNode->nodeAggregateId, $subgraph, $workspace, $bulkRequestSender, $elasticsearch);
         }
     }
 
     /**
      * Index this node, and add it to the current bulk request.
      */
-    private function indexDocumentNodeAndContent(Node $node, ContentSubgraphInterface $subgraph, Workspace $workspace, BulkRequestSender $bulkRequestSender, LoggerInterface $logger): void
+    private function indexDocumentNodeAndContent(Node $node, ContentSubgraphInterface $subgraph, Workspace $workspace, BulkRequestSender $bulkRequestSender, Elasticsearch $elasticsearch): void
     {
 
         $nodeTypeSearchSettings = NodeTypeSearchSettings::fromNodeType($node->nodeType, $this->settings->defaultConfigurationPerType);
         if (!$nodeTypeSearchSettings->isIndexed) {
-            $logger->debug(sprintf('Node "%s" (%s) skipped, Node Type is not allowed in the index (search.isIndexed not set).', $node->nodeAggregateId->value, $node->nodeTypeName->value), LogEnvironment::fromMethodName(__METHOD__));
+            $elasticsearch->logger->debug(sprintf('Node "%s" (%s) skipped, Node Type is not allowed in the index (search.isIndexed not set).', $node->nodeAggregateId->value, $node->nodeTypeName->value), LogEnvironment::fromMethodName(__METHOD__));
             return;
         }
 
         $elasticsearchDocumentId = $node->nodeAggregateId->value;
 
-        $elasticsearchDocument = $this->extractNodePropertiesForIndexing($nodeTypeSearchSettings, $node, $logger);
+        $elasticsearchDocument = $this->extractNodePropertiesForIndexing($nodeTypeSearchSettings, $node, $elasticsearch);
         if ($nodeTypeSearchSettings->isFulltextRoot) {
-            $logger->info(sprintf('Node "%s" (%s) indexed with fulltext.', $node->nodeAggregateId->value, $node->nodeTypeName->value), LogEnvironment::fromMethodName(__METHOD__));
+            $elasticsearch->logger->info(sprintf('Node "%s" (%s) indexed with fulltext.', $node->nodeAggregateId->value, $node->nodeTypeName->value), LogEnvironment::fromMethodName(__METHOD__));
 
             $fulltextData = [];
-            $this->extractFulltextRecursivelyForContent($node, $subgraph, $fulltextData, $logger);
+            $this->extractFulltextRecursivelyForContent($node, $subgraph, $fulltextData, $elasticsearch);
             $elasticsearchDocument[MappingDefinition::NEOS_FULLTEXT_FIELD] = $fulltextData;
         } else {
-            $logger->info(sprintf('Node "%s" (%s) indexed (without fulltext).', $node->nodeAggregateId->value, $node->nodeTypeName->value), LogEnvironment::fromMethodName(__METHOD__));
+            $elasticsearch->logger->info(sprintf('Node "%s" (%s) indexed (without fulltext).', $node->nodeAggregateId->value, $node->nodeTypeName->value), LogEnvironment::fromMethodName(__METHOD__));
         }
 
         $elasticsearchDocument['neos_workspace'] = $workspace->workspaceName->value;
@@ -86,12 +87,12 @@ class SubgraphIndexer
         $bulkRequestSender->indexDocument($elasticsearchDocumentId, $elasticsearchDocument);
     }
 
-    private function extractNodePropertiesForIndexing(NodeTypeSearchSettings $nodeTypeSearchSettings, Node $node, LoggerInterface $logger): mixed
+    private function extractNodePropertiesForIndexing(NodeTypeSearchSettings $nodeTypeSearchSettings, Node $node, Elasticsearch $elasticsearch): mixed
     {
         $elasticsearchDocument = [];
         foreach ($nodeTypeSearchSettings->properties as $propertySearchSettings) {
             if ($propertySearchSettings->isIndexingEnabled()) {
-                $valueToStore = $this->indexingEelEvaluator->runPropertyIndexingExpression($propertySearchSettings, $node);
+                $valueToStore = $this->indexingEelEvaluator->runPropertyIndexingExpression($propertySearchSettings, $node, $elasticsearch);
                 $elasticsearchDocument[$propertySearchSettings->propertyName] = $valueToStore;
             }
         }
@@ -99,15 +100,15 @@ class SubgraphIndexer
         return $elasticsearchDocument;
     }
 
-    private function extractFulltextRecursivelyForContent(Node $node, ContentSubgraphInterface $subgraph, array &$fulltextData, LoggerInterface $logger): void
+    private function extractFulltextRecursivelyForContent(Node $node, ContentSubgraphInterface $subgraph, array &$fulltextData, Elasticsearch $elasticsearch): void
     {
         $nodeTypeSearchSettings = NodeTypeSearchSettings::fromNodeType($node->nodeType, $this->settings->defaultConfigurationPerType);
 
         foreach ($nodeTypeSearchSettings->properties as $propertySearchSettings) {
             if ($nodeTypeSearchSettings->isFulltextEnabled && $propertySearchSettings->hasFulltextExtractor()) {
-                $this->indexingEelEvaluator->runFulltextExpression($propertySearchSettings, $node, $fulltextData);
+                $this->indexingEelEvaluator->runFulltextExpression($propertySearchSettings, $node, $fulltextData, $elasticsearch);
 
-                $logger->debug(sprintf('  Node "%s" - Property "%s" indexed with fulltext.', $node->nodeAggregateId->value, $propertySearchSettings->propertyName), LogEnvironment::fromMethodName(__METHOD__));
+                $elasticsearch->logger->debug(sprintf('  Node "%s" - Property "%s" indexed with fulltext.', $node->nodeAggregateId->value, $propertySearchSettings->propertyName), LogEnvironment::fromMethodName(__METHOD__));
             }
         }
 
@@ -118,7 +119,7 @@ class SubgraphIndexer
             )
         );
         foreach ($contentNodes as $contentNode) {
-            $this->extractFulltextRecursivelyForContent($contentNode, $subgraph, $fulltextData, $logger);
+            $this->extractFulltextRecursivelyForContent($contentNode, $subgraph, $fulltextData, $elasticsearch);
         }
     }
 }

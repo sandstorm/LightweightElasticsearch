@@ -14,11 +14,12 @@ namespace Sandstorm\LightweightElasticsearch\Indexing\AssetExtraction;
  */
 
 use Neos\Media\Domain\Model\AssetInterface;
+use Sandstorm\LightweightElasticsearch\Elasticsearch;
 
 interface AssetExtractorInterface
 {
     /**
      * Takes an asset and extracts content and meta data.
      */
-    public function extract(AssetInterface $asset): AssetContent;
+    public function extract(AssetInterface $asset, Elasticsearch $elasticsearch): AssetContent;
 }

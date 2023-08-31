@@ -13,11 +13,12 @@ class NodeTypeMappingBuilder
 {
 
     public function __construct(
-        private readonly DefaultConfigurationPerType $defaultConfigurationPerType
+        private readonly DefaultConfigurationPerType $defaultConfigurationPerType,
+        private readonly LoggerInterface $logger
     ) {
     }
 
-    public function build(NodeTypeManager $nodeTypeManager, LoggerInterface $logger): MappingDefinition
+    public function build(NodeTypeManager $nodeTypeManager): MappingDefinition
     {
         $mapping = MappingDefinition::empty();
         foreach ($nodeTypeManager->getNodeTypes() as $nodeTypeName => $nodeType) {
@@ -36,7 +37,7 @@ class NodeTypeMappingBuilder
             if ($nodeTypeSearchSettings->elasticsearchMapping) {
                 $mapping = $mapping->merge($nodeTypeSearchSettings->elasticsearchMapping);
             }
-            $logger->debug('Node Type "' . $nodeTypeName . '":');
+            $this->logger->debug('Node Type "' . $nodeTypeName . '":');
 
             foreach ($nodeTypeSearchSettings->properties as $propertySearchSettings) {
                 if (!$propertySearchSettings->isIndexingEnabled()) {
@@ -45,10 +46,10 @@ class NodeTypeMappingBuilder
                 }
 
                 if ($propertySearchSettings->elasticsearchMapping) {
-                    $logger->debug('  Property "' . $propertySearchSettings->propertyName . '": found ElasticSearch Mapping in Node property.');
+                    $this->logger->debug('  Property "' . $propertySearchSettings->propertyName . '": found ElasticSearch Mapping in Node property.');
                     $mapping = $mapping->merge($propertySearchSettings->elasticsearchMapping);
                 } elseif ($this->defaultConfigurationPerType->hasMapping($propertySearchSettings)) {
-                    $logger->debug('  Node Type "' . $nodeTypeName . '" - property "' . $propertySearchSettings->propertyName . '": found ElasticSearch Mapping in default configuration.');
+                    $this->logger->debug('  Node Type "' . $nodeTypeName . '" - property "' . $propertySearchSettings->propertyName . '": found ElasticSearch Mapping in default configuration.');
                     $mapping = $mapping->merge($this->defaultConfigurationPerType->getMapping($propertySearchSettings));
                 }
             }

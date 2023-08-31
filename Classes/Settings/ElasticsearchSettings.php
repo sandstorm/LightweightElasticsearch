@@ -14,6 +14,8 @@ use Sandstorm\LightweightElasticsearch\SharedModel\IndexNamePrefix;
 #[Flow\Proxy(false)]
 class ElasticsearchSettings
 {
+
+
     private function __construct(
         public readonly IndexNamePrefix $nodeIndexNamePrefix,
         public readonly int $transferConnectionTimeout,
@@ -24,6 +26,7 @@ class ElasticsearchSettings
         public readonly array $defaultContext, // TODO: maybe rename to "indexingEelContext"?
         public readonly int $indexingBatchSizeElements,
         public readonly int $indexingBatchSizeOctets,
+        public readonly int $assetMaximumFileSize,
     ) {
     }
 
@@ -51,6 +54,8 @@ class ElasticsearchSettings
             indexingBatchSizeElements: $settings['indexing']['batchSize']['elements'] ?? 500,
             // OLD: @Flow\InjectConfiguration(package="Flowpack.ElasticSearch.ContentRepositoryAdaptor", path="indexing.batchSize.octets")
             indexingBatchSizeOctets: $settings['indexing']['batchSize']['octets'] ?? 40_000_000,
+            // OLD: * @Flow\InjectConfiguration(package="Flowpack.ElasticSearch.ContentRepositoryAdaptor", path="indexing.assetExtraction.maximumFileSize")
+            assetMaximumFileSize: $settings['indexing']['assetExtraction']['maximumFileSize'] ?? 104_857_600,
         );
     }
 

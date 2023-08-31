@@ -50,12 +50,14 @@ class NodeIndexCommandController extends CommandController
      */
     public function buildCommand(string $workspace = 'live', bool $verbose = false): void
     {
-        $elasticsearch = $this->elasticsearchFactory->build(ContentRepositoryId::fromString('default'));
         $consoleLogBackend = new ConsoleBackend();
         if ($verbose) {
             $consoleLogBackend->setSeverityThreshold(LOG_DEBUG);
         }
         $logger = new Logger([$consoleLogBackend]);
+
+        $elasticsearch = $this->elasticsearchFactory->build(ContentRepositoryId::fromString('default'), $logger);
+
 
         $elasticsearch->indexWorkspace(WorkspaceName::fromString($workspace), $logger);
         $this->outputMemoryUsage();

@@ -34,6 +34,8 @@ Sandstorm:
 
     defaultConfigurationPerType:
       string:
+        elasticSearchMapping:
+          type: keyword
         indexing: '${value}'
       boolean:
         indexing: '${value}'

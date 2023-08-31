@@ -13,13 +13,12 @@ namespace Sandstorm\LightweightElasticsearch\Indexing\Eel;
  * source code.
  */
 
+use Neos\Flow\Annotations as Flow;
 use Neos\ContentRepository\Core\Projection\ContentGraph\Node;
 use Neos\ContentRepositoryRegistry\ContentRepositoryRegistry;
-use Neos\Flow\Annotations as Flow;
 use Neos\Eel\ProtectedContextAwareInterface;
 use Neos\Flow\Log\Utility\LogEnvironment;
 use Neos\Media\Domain\Model\AssetInterface;
-use Neos\ContentRepository\Search\Exception\IndexingException;
 use Psr\Log\LoggerInterface;
 use Sandstorm\LightweightElasticsearch\Indexing\AssetExtraction\AssetExtractorInterface;
 
@@ -28,6 +27,9 @@ use Sandstorm\LightweightElasticsearch\Indexing\AssetExtraction\AssetExtractorIn
  */
 class IndexingHelper implements ProtectedContextAwareInterface
 {
+    // WORKAROUND: set by {@see IndexingEelEvaluator} to ensure the current Elasticsearch entry point instance exists here.
+    public static \Sandstorm\LightweightElasticsearch\Elasticsearch $elasticsearch;
+
     /**
      * @Flow\Inject
      * @var AssetExtractorInterface
@@ -86,7 +88,7 @@ class IndexingHelper implements ProtectedContextAwareInterface
     /**
      * Convert an array of nodes to an array of node identifiers
      *
-     * @param array<NodeInterface> $nodes
+     * @param array<Node> $nodes
      * @return array
      */
     public function convertArrayOfNodesToArrayOfNodeIdentifiers($nodes): array
@@ -96,7 +98,8 @@ class IndexingHelper implements ProtectedContextAwareInterface
         }
         $nodeIdentifiers = [];
         foreach ($nodes as $node) {
-            $nodeIdentifiers[] = $node->getIdentifier();
+            assert($node instanceof  Node);
+            $nodeIdentifiers[] = $node->nodeAggregateId->value;
         }
 
         return $nodeIdentifiers;
@@ -189,10 +192,8 @@ class IndexingHelper implements ProtectedContextAwareInterface
      *
      * @param AssetInterface|AssetInterface[]|null $value
      * @param string $field
-     * @return array|null|string
-     * @throws IndexingException
      */
-    public function extractAssetContent($value, string $field = 'content')
+    public function extractAssetContent(mixed $value, string $field = 'content'): array|null|string
     {
         if (empty($value)) {
             return null;
@@ -203,9 +204,8 @@ class IndexingHelper implements ProtectedContextAwareInterface
             }
             return $result;
         } elseif ($value instanceof AssetInterface) {
-            $assetContent = $this->assetExtractor->extract($value);
-            $getter = 'get' . lcfirst($field);
-            return $assetContent->$getter();
+            $assetContent = $this->assetExtractor->extract($value, self::$elasticsearch);
+            return $assetContent->$field;
         } else {
             $this->logger->error('Value of type ' . gettype($value) . ' - ' . get_class($value) . ' could not be extracted.', LogEnvironment::fromMethodName(__METHOD__));
         }

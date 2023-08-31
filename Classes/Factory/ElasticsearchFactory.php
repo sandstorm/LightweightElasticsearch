@@ -7,6 +7,8 @@ use Neos\ContentRepository\Core\Factory\ContentRepositoryId;
 use Neos\ContentRepositoryRegistry\ContentRepositoryRegistry;
 use Neos\Eel\CompilingEvaluator;
 use Neos\Flow\Annotations as Flow;
+use Psr\Log\LoggerInterface;
+use Sandstorm\LightweightElasticsearch\ElasticsearchApiClient\ApiCalls\IngestPipelineApiCalls;
 use Sandstorm\LightweightElasticsearch\Indexing\AliasManager;
 use Sandstorm\LightweightElasticsearch\Indexing\BulkRequestSenderFactory;
 use Sandstorm\LightweightElasticsearch\Indexing\SubgraphIndexer;
@@ -52,11 +54,12 @@ class ElasticsearchFactory
             aliasApi: new AliasApiCalls(),
             indexApi: new IndexApiCalls(),
             bulkApi: new BulkApiCalls(),
+            ingestPipelineApi: new IngestPipelineApiCalls(),
             searchApi: new SearchApiCalls()
         );
     }
 
-    public function build(ContentRepositoryId $contentRepositoryId): Elasticsearch
+    public function build(ContentRepositoryId $contentRepositoryId, LoggerInterface $logger): Elasticsearch
     {
         $settings = ElasticsearchSettings::fromArray($this->settings);
         $contentRepository = $this->contentRepositoryRegistry->get($contentRepositoryId);
@@ -66,7 +69,10 @@ class ElasticsearchFactory
             settings: $settings,
             contentRepository: $contentRepository,
             apiClient: $apiClient,
-            nodeTypeMappingBuilder: new NodeTypeMappingBuilder($settings->defaultConfigurationPerType),
+            nodeTypeMappingBuilder: new NodeTypeMappingBuilder(
+                $settings->defaultConfigurationPerType,
+                $logger
+            ),
             documentIndexer: new SubgraphIndexer(
                 new BulkRequestSenderFactory(
                     $apiClient,
@@ -80,7 +86,8 @@ class ElasticsearchFactory
             ),
             aliasManager: new AliasManager(
                 $apiClient
-            )
+            ),
+            logger: $logger
         );
     }
 }

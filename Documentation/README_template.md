@@ -1,11 +1,13 @@
 # Sandstorm.LightweightElasticsearch
 
-...this is an attempt for a more lightweight elasticsearch integration for Neos CMS. This is built because I wanted
-to try out some different design decisions in parts of the Neos <-> Elasticsearch integration.
+|                       | LightweightElasticsearch 1.x                                                                           | LightweightElasticsearch 2.x    |
+|-----------------------|--------------------------------------------------------------------------------------------------------|---------------------------------|
+| Compatibility         | Neos 7, Neos 8                                                                                         | Neos 9 (new Content Repository) |
+| Architecture          | Hack, based on Flowpack.Elasticsearch.ContentrepositoryAdaptor                                         | Clean Room Rewrite              |
+| External Dependencies | Flowpack.Elasticsearch.ContentrepositoryAdaptor, Flowpack.Elasticsearch, Neos.ContentRepository.Search | *no external dependencies*      |
 
-This is a wrapper around Flowpack.Elasticsearch.ContentRepositoryAdaptor, which replaces parts of its API.
-A huge thanks goes to everybody maintaining Flowpack.Elasticsearch.ContentRepositoryAdaptor and Flowpack.Elasticsearch,
-as we build upon this work and profit from it greatly.
+So you see LightweightElasticsearch 2.x is a major rewrite compared to 1.x; with a clean architecture
+which hopefully will serve the community for a long time.
 
 <!-- TOC -->
 
@@ -38,15 +40,16 @@ as we build upon this work and profit from it greatly.
 
 The project has the following goals and limitations:
 
+- **Clean Architecture** (starting with LightweightElasticsearch 2.x): The old conglomerate of Flowpack.Elasticsearch, 
+  Flowpack.Elasticsearch.ContentRepositoryAdaptor, Neos.ContentRepository.Search, and Sandstorm.LightweightElasticsearch
+  was way too hard to understand and too hard to follow. With 2.0, we started from scratch with a completely re-done 
+  architecture.
+
 - **Only for fulltext search**
 
   This means only document nodes or anything which can potentially appear in fulltext search results is put into
   the Elasticsearch index (everything marked in the NodeTypes as `search.fulltext.isRoot = TRUE`).
   That means (by default) no content nodes or ContentCollections are stored inside the index.
-
-- **Easier Fulltext indexing implementation**
-
-  Fulltext collection is done in PHP instead of inside Elasticsearch with Painless.
 
 - **Query Results not specific to Neos**
 
@@ -67,13 +70,9 @@ The project has the following goals and limitations:
   This is an "artificial limitation" which could be removed; but we do not provide support for this removal
   right now.
 
-- **Only support for a single Elasticsearch version**
+- **Only support for new Elasticsearch / Opensearch versions**
 
-  We only support Elasticsearch 7 right now.
-
-- **Only index live the workspace**
-
-  We only index the live workspace, as this is the 99% case to be supported.
+  We only support Elasticsearch 7 and newer, and Opensearch starting from 2.9.0.
 
 - **Faceting using multiple Elasticsearch requests / One Aggregation per Request**
 
@@ -91,12 +90,11 @@ docker run --rm --name neos7-es -p 9200:9200 -p 9300:9300 -e "discovery.type=sin
 
 ## Indexing
 
-> **Tip: Indexing behaves to the user in the same way as defined in [Flowpack.ElasticSearch.ContentRepositoryAdaptor](https://github.com/Flowpack/Flowpack.ElasticSearch.ContentRepositoryAdaptor).
-> The only difference is the internal implementation:** Instead of indexing every node (content and document) individually and letting Elasticsearch
-> do the merging, we merge the content to the parent document in PHP, as this is easier to handle.
+>
+> **Tip: Indexing behaves to the user in **almost** the same way as defined in [Flowpack.ElasticSearch.ContentRepositoryAdaptor](https://github.com/Flowpack/Flowpack.ElasticSearch.ContentRepositoryAdaptor).
 > 
-> **The full configuration for indexing is exactly the same as in [Flowpack.ElasticSearch.ContentRepositoryAdaptor](https://github.com/Flowpack/Flowpack.ElasticSearch.ContentRepositoryAdaptor)**.
-> It is included below for your convenience.
+> **The full configuration for indexing is **almost** the same as in [Flowpack.ElasticSearch.ContentRepositoryAdaptor](https://github.com/Flowpack/Flowpack.ElasticSearch.ContentRepositoryAdaptor)**,
+> but all Settings have been centralized to Sandstorm.LightweightElasticsearch.
 
 The following commands are needed for indexing:
 
@@ -107,11 +105,6 @@ The following commands are needed for indexing:
 
 **NOTE:** Only nodes which are marked as `search.fulltext.isRoot` in the corresponding `NodeTypes.yaml`
 will become part of the search index, and all their children Content nodes' texts will be indexed as part of this.
-
-**Under the Covers**
-
-- The different indexing strategy is implemented using a custom `DocumentNodeIndexer`, which then calls a custom
-  `DocumentIndexerDriver`.
 
 As an example, you can then query the Elasticsearch index using:
 
@@ -140,61 +133,55 @@ in the NodeTypes.yaml. Generally this works by defining the global mapping at `[
 
 ### Exclude NodeTypes from indexing
 
-By default the indexing processes all NodeTypes, but you can change this in your *Settings.yaml*:
+> NOTE: In Flowpack.Elasticsearch.ContentRepositoryAdaptor and Sandstorm.LightweightElasticsearch 1.x, this
+> was done through `Settings.yaml` via `Neos.ContentRepository.Search.defaultConfigurationPerNodeType`.
+> 
+> In LightweightElasticsearch 2.x, this has changed to `NodeTypes.yaml` to key `search.isIndexed`.
+
+By default the indexing processes all NodeTypes, but you can change this in your *NodeTypes.yaml*:
 
 ```yaml
-Neos:
-  ContentRepository:
-    Search:
-      defaultConfigurationPerNodeType:
-        '*':
-          indexed: true
-        'Neos.Neos:FallbackNode':
-          indexed: false
-        'Neos.Neos:Shortcut':
-          indexed: false
-        'Neos.Neos:ContentCollection':
-          indexed: false
+'Your.NodeType':
+  search:
+    isIndexed: false
 ```
 
-You need to explicitly configure the individual NodeTypes (this feature does not check the Super Type configuration).
-But you  can use a special notation to configure a full namespace, `Acme.AcmeCom:*` will be applied for all node
-types in the `Acme.AcmeCom` namespace. The most specific configuration is used in this order:
-
-- NodeType name (`Neos.Neos:Shortcut`)
-- Full namespace notation (`Neos.Neos:*`)
-- Catch all (`*`)
+As usual, super type configuration is correctly taken into account.
 
 ### Indexing configuration per data type
+
+> NOTE: In Flowpack.Elasticsearch.ContentRepositoryAdaptor and Sandstorm.LightweightElasticsearch 1.x, this
+> was done through `Settings.yaml` via `Neos.ContentRepository.Search.defaultConfigurationPerType`.
+>
+> In LightweightElasticsearch 2.x, this has changed to key `Sandstorm.LightweightElasticsearch.defaultConfigurationPerType`.
 
 **The default configuration supports most use cases and often may not need to be touched, as this package comes
 with sane defaults for all Neos data types.**
 
 Indexing of properties is configured at two places. The defaults per-data-type are configured
-inside `Neos.ContentRepository.Search.defaultConfigurationPerType` of `Settings.yaml`.
+inside `Sandstorm.LightweightElasticsearch.defaultConfigurationPerType` of `Settings.yaml`.
 Furthermore, this can be overridden using the `properties.[....].search` path inside
 `NodeTypes.yaml`.
 
-This configuration contains two parts:
+This configuration contains the following parts:
 
 * Underneath `elasticSearchMapping`, the Elasticsearch property mapping can be defined.
 * Underneath `indexing`, an Eel expression which processes the value before indexing has to be
   specified. It has access to the current `value` and the current `node`.
+* Underneath `fulltextExtractor`, specify an Eel expression which extracts the values into different fulltext buckets.
+  It has access to the current `value` and the current `node`.
 
 Example (from the default configuration):
 
 ```yaml
  # Settings.yaml
-Neos:
-  ContentRepository:
-    Search:
-      defaultConfigurationPerType:
+Sandstorm:
+  LightweightElasticsearch:
+    defaultConfigurationPerType:
 
-        # strings should just be indexed with their simple value.
-        string:
-          elasticSearchMapping:
-            type: string
-          indexing: '${value}'
+      # strings should just be indexed with their simple value.
+      string:
+        indexing: '${value}'
 ```
 
 ### Indexing configuration per property
@@ -221,8 +208,6 @@ There are a few indexing helpers inside the `Indexing` namespace which are usabl
 `indexing` expression. In most cases, you don't need to touch this, but they were needed to build up
 the standard indexing configuration:
 
-* `Indexing.buildAllPathPrefixes`: for a path such as `foo/bar/baz`, builds up a list of path
-  prefixes, e.g. `['foo', 'foo/bar', 'foo/bar/baz']`.
 * `Indexing.extractNodeTypeNamesAndSupertypes(NodeType)`: extracts a list of node type names for
   the passed node type and all of its supertypes
 * `Indexing.convertArrayOfNodesToArrayOfNodeIdentifiers(array $nodes)`: convert the given nodes to
@@ -230,7 +215,7 @@ the standard indexing configuration:
 
 ### Skip indexing and mapping of a property
 
-If you don't want a property to be indexed, set `indexing: false`. In this case no mapping is configured for this field.
+If you don't want a property to be indexed, set `search.indexing: false`. In this case no mapping is configured for this field.
 This can be used to also solve a type conflict of two node properties with same name and different type.
 
 ### Fulltext Indexing
@@ -299,21 +284,22 @@ For more information on Elasticsearch's Date Formats,
 
 ### Working with Assets / Attachments
 
-If you want to index attachments, you need to install the [Elasticsearch Ingest-Attachment Plugin](https://www.elastic.co/guide/en/elasticsearch/plugins/master/ingest-attachment.html).
+If you want to index attachments, you need to install the [Elasticsearch Ingest-Attachment Plugin](https://www.elastic.co/guide/en/elasticsearch/plugins/master/ingest-attachment.html)
+or [Opensearch Ingest-Attachment](https://forum.opensearch.org/t/ingest-attachment-cannot-be-installed/6494/11).
+
 Then, you can add the following to your `Settings.yaml`:
 
 ```yaml
-Neos:
-  ContentRepository:
-    Search:
-      defaultConfigurationPerType:
-        'Neos\Media\Domain\Model\Asset':
-          elasticSearchMapping:
-            type: text
-          indexing: ${Indexing.Indexing.extractAssetContent(value)}
+Sandstorm:
+  LightweightElasticsearch:
+    defaultConfigurationPerType:
+      'Neos\Media\Domain\Model\Asset':
+        elasticSearchMapping:
+          type: text
+        indexing: ${Indexing.Indexing.extractAssetContent(value)}
 ```
 
-or add the attachments content to a fulletxt field in your NodeType configuration:
+or add the attachments content to a fulltext field in your NodeType configuration:
 
 ```yaml
   properties:
