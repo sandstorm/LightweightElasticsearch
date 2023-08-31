@@ -20,6 +20,6 @@ final class ElasticsearchBaseUrl
 
     public function withPathSegment(string $pathSegment) : UriInterface
     {
-        return new Uri($this->value . '/' . $pathSegment);
+        return new Uri($this->value . '/' . ltrim($pathSegment, '/'));
     }
 }

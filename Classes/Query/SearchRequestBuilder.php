@@ -96,7 +96,7 @@ class SearchRequestBuilder extends AbstractSearchRequestBuilder
         if ($this->searchResult === null) {
             try {
                 $jsonResponse = $this->executeInternal($this->request);
-                $this->searchResult = SearchResult::fromElasticsearchJsonResponse($jsonResponse, $this->contextNode);
+                $this->searchResult = SearchResult::fromElasticsearchJsonResponse($jsonResponse, $this->contextNode, $this->contentRepositoryRegistry);
             } catch (ApiException $exception) {
                 if ($this->handleElasticsearchExceptions === 'throw') {
                     throw $exception;

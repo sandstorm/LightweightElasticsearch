@@ -4,34 +4,32 @@
 namespace Sandstorm\LightweightElasticsearch\Query\Result;
 
 
-use Neos\ContentRepository\Domain\Model\NodeInterface;
+use Neos\ContentRepository\Core\Projection\ContentGraph\Node;
+use Neos\ContentRepository\Core\SharedModel\Node\NodeAggregateId;
+use Neos\ContentRepositoryRegistry\ContentRepositoryRegistry;
 use Neos\Eel\ProtectedContextAwareInterface;
 
 class SearchResultDocument implements ProtectedContextAwareInterface
 {
-    protected $hit;
-    private ?NodeInterface $contextNode;
-
-    protected function __construct(array $hit, NodeInterface $contextNode = null)
+    protected function __construct(
+        private readonly array $hit,
+        private readonly Node|null $contextNode = null,
+        private readonly ContentRepositoryRegistry|null $contentRepositoryRegistry = null
+    )
     {
-        $this->hit = $hit;
-        $this->contextNode = $contextNode;
     }
 
-    public static function fromElasticsearchJsonResponse(array $hit, NodeInterface $contextNode = null): self
+    public static function fromElasticsearchJsonResponse(array $hit, Node $contextNode = null, ContentRepositoryRegistry $contentRepositoryRegistry = null): self
     {
-        return new static($hit, $contextNode);
+        return new static($hit, $contextNode, $contentRepositoryRegistry);
     }
 
-    public function loadNode(): ?NodeInterface
+    public function loadNode(): ?Node
     {
-        $nodePath = $this->hit['_source']['neos_path'];
+        $nodeAggregateId = NodeAggregateId::fromString($this->hit['_source']['neos_nodeaggregateid']);
 
-        if (is_array($nodePath)) {
-            $nodePath = current($nodePath);
-        }
-
-        return $this->contextNode->getNode($nodePath);
+        $subgraph = $this->contentRepositoryRegistry->subgraphForNode($this->contextNode);
+        return $subgraph->findNodeById($nodeAggregateId);
     }
 
     public function getFullSearchHit()

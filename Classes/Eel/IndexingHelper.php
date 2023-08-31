@@ -13,6 +13,8 @@ namespace Sandstorm\LightweightElasticsearch\Eel;
  * source code.
  */
 
+use Neos\ContentRepository\Core\Projection\ContentGraph\Node;
+use Neos\ContentRepositoryRegistry\ContentRepositoryRegistry;
 use Neos\Flow\Annotations as Flow;
 use Neos\Eel\ProtectedContextAwareInterface;
 use Neos\Flow\Log\Utility\LogEnvironment;
@@ -34,52 +36,23 @@ class IndexingHelper implements ProtectedContextAwareInterface
 
     /**
      * @Flow\Inject
+     * @var ContentRepositoryRegistry
+     */
+    protected $contentRepositoryRegistry;
+
+    /**
+     * @Flow\Inject
      * @var LoggerInterface
      */
     protected $logger;
 
-    /**
-     * Build all path prefixes. From an input such as:
-     *
-     *   /foo/bar/baz
-     *
-     * it emits an array with:
-     *
-     *   /
-     *   /foo
-     *   /foo/bar
-     *   /foo/bar/baz
-     *
-     * This method works both with absolute and relative paths. If a relative path is given,
-     * the returned array will lack the first element and the leading slashes, obviously.
-     *
-     * @param string $path
-     * @return array<string>
-     */
-    public function buildAllPathPrefixes(string $path): array
+    public function workspaceNameForNode(Node $node): string
     {
-        if ($path === '') {
-            return [];
-        }
+        $contentRepository = $this->contentRepositoryRegistry->get($node->subgraphIdentity->contentRepositoryId);
+        $workspace = $contentRepository->getWorkspaceFinder()->findOneByCurrentContentStreamId($node->subgraphIdentity->contentStreamId);
 
-        if ($path === '/') {
-            return ['/'];
-        }
+        return $workspace->workspaceName->value;
 
-        $currentPath = '';
-        $pathPrefixes = [];
-        if (strpos($path, '/') === 0) {
-            $currentPath = '/';
-            $pathPrefixes[] = $currentPath;
-        }
-        $path = ltrim($path, '/');
-
-        foreach (explode('/', $path) as $pathPart) {
-            $currentPath .= $pathPart . '/';
-            $pathPrefixes[] = rtrim($currentPath, '/');
-        }
-
-        return $pathPrefixes;
     }
 
     /**

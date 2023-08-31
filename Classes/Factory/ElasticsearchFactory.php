@@ -2,17 +2,21 @@
 
 namespace Sandstorm\LightweightElasticsearch\Factory;
 
+use A\B;
 use Neos\ContentRepository\Core\Factory\ContentRepositoryId;
 use Neos\ContentRepositoryRegistry\ContentRepositoryRegistry;
 use Neos\Eel\CompilingEvaluator;
 use Neos\Flow\Annotations as Flow;
+use Sandstorm\LightweightElasticsearch\Core\DocumentIndexing\AliasManager;
 use Sandstorm\LightweightElasticsearch\Core\DocumentIndexing\BulkRequestSenderFactory;
 use Sandstorm\LightweightElasticsearch\Core\DocumentIndexing\DocumentIndexer;
 use Sandstorm\LightweightElasticsearch\Core\DocumentIndexing\IndexingEelEvaluator;
 use Sandstorm\LightweightElasticsearch\Core\Elasticsearch;
 use Sandstorm\LightweightElasticsearch\Core\ElasticsearchApiClient\ApiCaller;
+use Sandstorm\LightweightElasticsearch\Core\ElasticsearchApiClient\ApiCalls\AliasApiCalls;
 use Sandstorm\LightweightElasticsearch\Core\ElasticsearchApiClient\ApiCalls\BulkApiCalls;
 use Sandstorm\LightweightElasticsearch\Core\ElasticsearchApiClient\ApiCalls\IndexApiCalls;
+use Sandstorm\LightweightElasticsearch\Core\ElasticsearchApiClient\ApiCalls\SearchApiCalls;
 use Sandstorm\LightweightElasticsearch\Core\ElasticsearchApiClient\ElasticsearchApiClient;
 use Sandstorm\LightweightElasticsearch\Core\NodeTypeMapping\NodeTypeMappingBuilder;
 use Sandstorm\LightweightElasticsearch\Core\Settings\ElasticsearchSettings;
@@ -43,10 +47,12 @@ class ElasticsearchFactory
     {
         $this->apiCaller->initializeRequestEngine($settings);
         return new ElasticsearchApiClient(
-            $settings->baseUrl,
-            $this->apiCaller,
-            new IndexApiCalls(),
-            new BulkApiCalls()
+            baseUrl: $settings->baseUrl,
+            apiCaller: $this->apiCaller,
+            aliasApi: new AliasApiCalls(),
+            indexApi: new IndexApiCalls(),
+            bulkApi: new BulkApiCalls(),
+            searchApi: new SearchApiCalls()
         );
     }
 
@@ -57,11 +63,11 @@ class ElasticsearchFactory
         $apiClient = $this->buildElasticsearchApiClient($settings);
 
         return new Elasticsearch(
-            $settings,
-            $contentRepository,
-            $apiClient,
-            new NodeTypeMappingBuilder($settings->defaultConfigurationPerType),
-            new DocumentIndexer(
+            settings: $settings,
+            contentRepository: $contentRepository,
+            apiClient: $apiClient,
+            nodeTypeMappingBuilder: new NodeTypeMappingBuilder($settings->defaultConfigurationPerType),
+            documentIndexer: new DocumentIndexer(
                 new BulkRequestSenderFactory(
                     $apiClient,
                     $settings
@@ -71,6 +77,9 @@ class ElasticsearchFactory
                     $settings
                 ),
                 $settings
+            ),
+            aliasManager: new AliasManager(
+                $apiClient
             )
         );
     }

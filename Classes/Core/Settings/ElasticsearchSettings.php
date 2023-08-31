@@ -14,7 +14,7 @@ class ElasticsearchSettings
 
 
     private function __construct(
-        public readonly IndexNamePrefix $indexNamePrefix,
+        public readonly IndexNamePrefix $nodeIndexNamePrefix,
         public readonly int $transferConnectionTimeout,
         public readonly ElasticsearchBaseUrl $baseUrl,
         public readonly bool $transferSslVerifyPeer,
@@ -30,7 +30,7 @@ class ElasticsearchSettings
     {
         return new self(
             // OLD: @Flow\InjectConfiguration(path="elasticSearch.indexName", package="Neos.ContentRepository.Search")
-            indexNamePrefix: IndexNamePrefix::fromString($settings['elasticsearch']['indexName'] ?? 'index'),
+            nodeIndexNamePrefix: IndexNamePrefix::fromString($settings['elasticsearch']['indexName'] ?? 'nodeindex'),
             // OLD: @Flow\InjectConfiguration(path="transfer.connectionTimeout", package="Flowpack.Elasticsearch")
             transferConnectionTimeout: $settings['elasticsearch']['connectionTimeout'] ?? 1,
             // TODO where old config?

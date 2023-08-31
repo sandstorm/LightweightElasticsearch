@@ -21,7 +21,6 @@ use Psr\Http\Message\ServerRequestFactoryInterface;
 use Psr\Http\Message\StreamFactoryInterface;
 use Psr\Http\Message\UriInterface;
 use Sandstorm\LightweightElasticsearch\Core\Settings\ElasticsearchSettings;
-use Sandstorm\LightweightElasticsearch\Core\SharedModel\ElasticsearchRequestUrl;
 
 /**
  * Handles the requests
@@ -64,7 +63,7 @@ class ApiCaller
         $request = $request->withHeader('Content-Type', 'application/json');
 
         if ($content !== null) {
-            $request = $request->withBody($this->contentStreamFactory->createStream(is_array($content) ? json_encode($content) : (string)$content));
+            $request = $request->withBody($this->contentStreamFactory->createStream($content));
         }
 
         return $this->browser->sendRequest($request);

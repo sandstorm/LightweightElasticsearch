@@ -13,9 +13,12 @@ namespace Sandstorm\LightweightElasticsearch\Query;
  * source code.
  */
 
+use Neos\ContentRepository\Core\Factory\ContentRepositoryId;
+use Neos\ContentRepository\Core\Projection\ContentGraph\Node;
+use Neos\ContentRepositoryRegistry\ContentRepositoryRegistry;
 use Neos\Eel\ProtectedContextAwareInterface;
 use Neos\Flow\Mvc\ActionRequest;
-use Neos\ContentRepository\Domain\Model\NodeInterface;
+use Sandstorm\LightweightElasticsearch\Factory\ElasticsearchFactory;
 use Sandstorm\LightweightElasticsearch\Query\Aggregation\AggregationsBuilder;
 use Sandstorm\LightweightElasticsearch\Query\Aggregation\TermsAggregationBuilder;
 use Sandstorm\LightweightElasticsearch\Query\Highlight\NeosFulltextHighlightBuilder;
@@ -39,16 +42,19 @@ use Sandstorm\LightweightElasticsearch\Query\Query\TermQueryBuilder;
  */
 class ElasticsearchHelper implements ProtectedContextAwareInterface
 {
+    public function __construct(
+        private readonly ContentRepositoryRegistry $contentRepositoryRegistry,
+        private readonly ElasticsearchFactory $elasticsearchFactory,
+    ) {
+    }
+
     /**
      * Create a new Search Query builder
-     *
-     * @param NodeInterface|null $contextNode
-     * @param array $additionalIndices
-     * @return SearchRequestBuilder
      */
-    public function createRequest(NodeInterface $contextNode = null, array $additionalIndices = []): SearchRequestBuilder
+    public function createRequest(Node $contextNode = null, array $additionalIndices = []): SearchRequestBuilder
     {
-        return new SearchRequestBuilder($contextNode, $additionalIndices);
+        $elasticsearch = $this->elasticsearchFactory->build($contextNode?->subgraphIdentity->contentRepositoryId ?? ContentRepositoryId::fromString('default'));
+        return new SearchRequestBuilder($this->contentRepositoryRegistry, $elasticsearch->settings, $elasticsearch->apiClient, $contextNode, $additionalIndices);
     }
 
     public function createBooleanQuery(): BooleanQueryBuilder
@@ -56,9 +62,9 @@ class ElasticsearchHelper implements ProtectedContextAwareInterface
         return BooleanQueryBuilder::create();
     }
 
-    public function createNeosFulltextQuery(NodeInterface $contextNode): NeosFulltextQueryBuilder
+    public function createNeosFulltextQuery(Node $contextNode): NeosFulltextQueryBuilder
     {
-        return NeosFulltextQueryBuilder::create($contextNode);
+        return NeosFulltextQueryBuilder::create($contextNode, $this->contentRepositoryRegistry);
     }
 
     public function createTermQuery(string $fieldName, $value): TermQueryBuilder

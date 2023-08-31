@@ -2,9 +2,12 @@
 
 namespace Sandstorm\LightweightElasticsearch\Core\SharedModel;
 
-final class IndexPostfix implements \JsonSerializable
+/**
+ * A timestamp when the index was created. Only the newest timestamp stays.
+ */
+final class IndexGeneration implements \JsonSerializable
 {
-    public const PATTERN = '/^[a-z0-9\-]+$/';
+    public const PATTERN = '/^[0-9]+$/';
 
     private function __construct(
         public readonly string $value
@@ -34,7 +37,7 @@ final class IndexPostfix implements \JsonSerializable
         return $this->value;
     }
 
-    public function equals(IndexPostfix $other): bool
+    public function equals(IndexGeneration $other): bool
     {
         return $this->value === $other->value;
     }

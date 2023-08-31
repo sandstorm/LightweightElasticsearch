@@ -3,24 +3,23 @@ declare(strict_types=1);
 
 namespace Sandstorm\LightweightElasticsearch\Query;
 
-use Neos\ContentRepository\Domain\Model\NodeInterface;
+use Neos\ContentRepository\Core\Projection\ContentGraph\Node;
+use Neos\ContentRepository\Core\SharedModel\Workspace\WorkspaceName;
+use Neos\ContentRepositoryRegistry\ContentRepositoryRegistry;
 use Neos\Flow\Annotations as Flow;
 use Flowpack\ElasticSearch\Transfer\Exception\ApiException;
 use Neos\Eel\ProtectedContextAwareInterface;
 use Neos\Flow\Log\ThrowableStorageInterface;
 use Neos\Flow\Log\Utility\LogEnvironment;
 use Psr\Log\LoggerInterface;
-use Sandstorm\LightweightElasticsearch\Elasticsearch\ElasticsearchClient;
+use Sandstorm\LightweightElasticsearch\Core\ElasticsearchApiClient\ElasticsearchApiClient;
+use Sandstorm\LightweightElasticsearch\Core\Settings\ElasticsearchSettings;
+use Sandstorm\LightweightElasticsearch\Core\SharedModel\AliasName;
+use Symfony\Component\DependencyInjection\Alias;
 
 
 abstract class AbstractSearchRequestBuilder implements ProtectedContextAwareInterface
 {
-
-    /**
-     * __Flow\Inject
-     * @var ElasticsearchClient
-     */
-    protected $elasticSearchClient;
 
     /**
      * @Flow\Inject
@@ -34,8 +33,6 @@ abstract class AbstractSearchRequestBuilder implements ProtectedContextAwareInte
      */
     protected $logger;
 
-    private array $additionalIndices;
-
     /**
      * @var boolean
      */
@@ -45,16 +42,24 @@ abstract class AbstractSearchRequestBuilder implements ProtectedContextAwareInte
      * @var string
      */
     protected $logMessage;
+    private WorkspaceName $workspaceName;
 
-    /**
-     * @var NodeInterface|null
-     */
-    protected ?NodeInterface $contextNode;
+    public function __construct(
+        protected readonly ContentRepositoryRegistry $contentRepositoryRegistry,
+        protected readonly ElasticsearchSettings $settings,
+        protected readonly ElasticsearchApiClient $apiClient,
+        protected readonly Node|null $contextNode = null,
+        protected readonly array $additionalAliases = [],
 
-    public function __construct(NodeInterface $contextNode = null, array $additionalIndices = [])
-    {
-        $this->contextNode = $contextNode;
-        $this->additionalIndices = $additionalIndices;
+    ) {
+        $contentRepository = $this->contentRepositoryRegistry->get($this->contextNode->subgraphIdentity->contentRepositoryId);
+        $workspace = $contentRepository->getWorkspaceFinder()->findOneByCurrentContentStreamId($this->contextNode->subgraphIdentity->contentStreamId);
+        $this->workspaceName = $workspace->workspaceName;
+        foreach ($this->additionalAliases as $alias) {
+            if (!$alias instanceof AliasName) {
+                throw new \RuntimeException('alias is no AliasName, but ' . get_class($alias), 1693488463);
+            }
+        }
     }
 
     /**
@@ -85,17 +90,20 @@ abstract class AbstractSearchRequestBuilder implements ProtectedContextAwareInte
         try {
             $timeBefore = microtime(true);
 
-            $indexNames = $this->additionalIndices;
+            $aliasNames = $this->additionalAliases;
             if ($this->contextNode !== null) {
-                $this->elasticSearchClient->setContextNode($this->contextNode);
-                $indexNames[] = $this->elasticSearchClient->getIndexNamePrefix();
+                $aliasNames[] = AliasName::createForWorkspaceAndDimensionSpacePoint(
+                    $this->settings->nodeIndexNamePrefix,
+                    $this->contextNode->subgraphIdentity->contentRepositoryId,
+                    $this->workspaceName,
+                    $this->contextNode->subgraphIdentity->dimensionSpacePoint,
+                );
             }
 
-            $response = $this->elasticSearchClient->request('GET', '/' . implode(',', $indexNames) . '/_search', [], $request);
+            $jsonResponse = $this->apiClient->search($aliasNames, $request);
             $timeAfterwards = microtime(true);
 
-            $jsonResponse = $response->getTreatedContent();
-            $this->logThisQuery && $this->logger->debug(sprintf('Query Log (%s): Indexname: %s %s -- execution time: %s ms -- Number of results returned: %s -- Total Results: %s', $this->logMessage, implode(',', $indexNames), json_encode($request), (($timeAfterwards - $timeBefore) * 1000), count($jsonResponse['hits']['hits']), $jsonResponse['hits']['total']['value']), LogEnvironment::fromMethodName(__METHOD__));
+            $this->logThisQuery && $this->logger->debug(sprintf('Query Log (%s): Indexname: %s %s -- execution time: %s ms -- Number of results returned: %s -- Total Results: %s', $this->logMessage, implode(',', $aliasNames), json_encode($request), (($timeAfterwards - $timeBefore) * 1000), count($jsonResponse['hits']['hits']), $jsonResponse['hits']['total']['value']), LogEnvironment::fromMethodName(__METHOD__));
             return $jsonResponse;
         } catch (ApiException $exception) {
             $message = $this->throwableStorage->logThrowable($exception);
