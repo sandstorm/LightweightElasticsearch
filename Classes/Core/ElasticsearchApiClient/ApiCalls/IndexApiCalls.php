@@ -3,10 +3,10 @@
 namespace Sandstorm\LightweightElasticsearch\Core\ElasticsearchApiClient\ApiCalls;
 
 use Sandstorm\LightweightElasticsearch\Core\ElasticsearchApiClient\ApiCaller;
-use Sandstorm\LightweightElasticsearch\Core\NodeType\MappingDefinition;
 use Sandstorm\LightweightElasticsearch\Core\Settings\CreateIndexParameters;
 use Sandstorm\LightweightElasticsearch\Core\SharedModel\ElasticsearchBaseUrl;
 use Sandstorm\LightweightElasticsearch\Core\SharedModel\IndexName;
+use Sandstorm\LightweightElasticsearch\Core\SharedModel\Mapping\MappingDefinition;
 
 class IndexApiCalls
 {

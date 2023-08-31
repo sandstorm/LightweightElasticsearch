@@ -5,11 +5,12 @@ namespace Sandstorm\LightweightElasticsearch\Core\Settings;
 use Neos\Flow\Annotations as Flow;
 use Sandstorm\LightweightElasticsearch\Core\SharedModel\ElasticsearchBaseUrl;
 use Sandstorm\LightweightElasticsearch\Core\SharedModel\IndexNamePrefix;
-use Sandstorm\LightweightElasticsearch\Core\SharedModel\Mapping\DefaultMappingConfigurationPerType;
 
 #[Flow\Proxy(false)]
 class ElasticsearchSettings
 {
+
+
 
 
     private function __construct(
@@ -18,7 +19,10 @@ class ElasticsearchSettings
         public readonly ElasticsearchBaseUrl $baseUrl,
         public readonly bool $transferSslVerifyPeer,
         public readonly bool $transferSslVerifyHost,
-        public readonly DefaultMappingConfigurationPerType $defaultConfigurationPerType,
+        public readonly DefaultConfigurationPerType $defaultConfigurationPerType,
+        public readonly array $defaultContext, // TODO: maybe rename to "indexingEelContext"?
+        public readonly int $indexingBatchSizeElements,
+        public readonly int $indexingBatchSizeOctets,
     ) {
     }
 
@@ -37,7 +41,15 @@ class ElasticsearchSettings
             transferSslVerifyHost: $settings['transfer']['sslVerifyHost'] ?? true,
 
             // OLD: @Flow\InjectConfiguration(package="Neos.ContentRepository.Search", path="defaultConfigurationPerType")
-            defaultConfigurationPerType: DefaultMappingConfigurationPerType::fromArray($settings['defaultConfigurationPerType'] ?? []),
+            defaultConfigurationPerType: DefaultConfigurationPerType::fromArray($settings['defaultConfigurationPerType'] ?? []),
+
+            // OLD: @Flow\InjectConfiguration(package="Neos.ContentRepository.Search", path="defaultContext")
+            defaultContext: $settings['defaultContext'],
+
+            // OLD: @Flow\InjectConfiguration(package="Flowpack.ElasticSearch.ContentRepositoryAdaptor", path="indexing.batchSize.elements")
+            indexingBatchSizeElements: $settings['indexing']['batchSize']['elements'] ?? 500,
+            // OLD: @Flow\InjectConfiguration(package="Flowpack.ElasticSearch.ContentRepositoryAdaptor", path="indexing.batchSize.octets")
+            indexingBatchSizeOctets: $settings['indexing']['batchSize']['octets'] ?? 40_000_000,
         );
     }
 

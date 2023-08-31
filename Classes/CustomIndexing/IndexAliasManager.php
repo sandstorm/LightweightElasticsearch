@@ -19,7 +19,7 @@ class IndexAliasManager
 {
 
     /**
-     * @Flow\Inject
+     * __Flow\Inject
      * @var ElasticsearchClient
      */
     protected $searchClient;

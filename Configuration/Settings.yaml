@@ -30,3 +30,29 @@ Sandstorm:
 
     elasticsearch:
       baseUrl: http://127.0.0.1:9200
+
+
+    defaultConfigurationPerType:
+      string:
+        indexing: '${value}'
+      boolean:
+        indexing: '${value}'
+      integer:
+        indexing: '${value}'
+      date:
+        indexing: '${(value ? Date.format(value, ''Y-m-d\TH:i:s'') + ''Z'' : null)}'
+      Neos\Media\Domain\Model\Video:
+        indexing: ''
+      Neos\Media\Domain\Model\ImageInterface:
+        indexing: ''
+      references:
+        indexing: '${Indexing.convertArrayOfNodesToArrayOfNodeIdentifiers(value)}'
+      reference:
+        indexing: '${value.identifier}'
+
+    defaultContext:
+      q: Neos\Eel\FlowQuery\FlowQuery::q
+      String: Neos\Eel\Helper\StringHelper
+      Array: Neos\Eel\Helper\ArrayHelper
+      Date: Neos\Eel\Helper\DateHelper
+      Indexing: Sandstorm\LightweightElasticsearch\Eel\IndexingHelper

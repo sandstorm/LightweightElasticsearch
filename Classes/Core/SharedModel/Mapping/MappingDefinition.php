@@ -1,8 +1,9 @@
 <?php
 
-namespace Sandstorm\LightweightElasticsearch\Core\NodeType;
+namespace Sandstorm\LightweightElasticsearch\Core\SharedModel\Mapping;
 
 use Neos\Utility\Arrays;
+use Sandstorm\LightweightElasticsearch\Core\NodeTypeMapping\NodeTypeMappingBuilder;
 
 class MappingDefinition implements \JsonSerializable
 {
@@ -24,6 +25,8 @@ class MappingDefinition implements \JsonSerializable
 
     public static function forProperty(string $propertyName, array $propertyMapping): self
     {
+        // filter out null values
+        $propertyMapping = array_filter($propertyMapping, fn($value) => $value !== null);
         return self::createWithProperties([
             $propertyName => $propertyMapping
         ]);
@@ -31,7 +34,11 @@ class MappingDefinition implements \JsonSerializable
 
     public static function empty(): self
     {
-        return new self([]);
+        return new self([
+            'properties' => [
+                NodeTypeMappingBuilder::NEOS_TYPE_FIELD => ['type' => 'keyword'],
+            ]
+        ]);
     }
 
     public function merge(MappingDefinition $other): self

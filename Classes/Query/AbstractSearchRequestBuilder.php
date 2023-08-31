@@ -17,7 +17,7 @@ abstract class AbstractSearchRequestBuilder implements ProtectedContextAwareInte
 {
 
     /**
-     * @Flow\Inject
+     * __Flow\Inject
      * @var ElasticsearchClient
      */
     protected $elasticSearchClient;

@@ -14,14 +14,11 @@ namespace Sandstorm\LightweightElasticsearch\AssetExtraction;
  */
 
 use Neos\Flow\Annotations as Flow;
-use Neos\ContentRepository\Search\AssetExtraction\AssetExtractorInterface;
-use Neos\ContentRepository\Search\Dto\AssetContent;
 use Neos\Flow\Log\ThrowableStorageInterface;
 use Neos\Flow\Log\Utility\LogEnvironment;
 use Neos\Media\Domain\Model\AssetInterface;
 use Neos\Utility\Arrays;
 use Psr\Log\LoggerInterface;
-use Sandstorm\LightweightElasticsearch\Elasticsearch\ElasticsearchClient;
 
 /**
  * @Flow\Scope("singleton")
@@ -29,7 +26,7 @@ use Sandstorm\LightweightElasticsearch\Elasticsearch\ElasticsearchClient;
 class IngestAttachmentAssetExtractor implements AssetExtractorInterface
 {
     /**
-     * @Flow\Inject
+     * __Flow\Inject
      * @var ElasticsearchClient
      */
     protected $elasticsearchClient;
@@ -56,12 +53,12 @@ class IngestAttachmentAssetExtractor implements AssetExtractorInterface
      * Takes an asset and extracts content and meta data.
      *
      * @param AssetInterface $asset
-     * @return AssetContent
+     * @return Dto\AssetContent
      * @throws \Flowpack\ElasticSearch\Transfer\Exception
      * @throws \Flowpack\ElasticSearch\Transfer\Exception\ApiException
      * @throws \Neos\Flow\Http\Exception
      */
-    public function extract(AssetInterface $asset): AssetContent
+    public function extract(AssetInterface $asset): Dto\AssetContent
     {
         if ($asset->getResource()->getFileSize() > $this->maximumFileSize) {
             $this->logger->info(sprintf('The asset %s with size of %s bytes exceeds the maximum size of %s bytes. The file content was not ingested.', $asset->getResource()->getFilename(), $asset->getResource()->getFileSize(), $this->maximumFileSize), LogEnvironment::fromMethodName(__METHOD__));

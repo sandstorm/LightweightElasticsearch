@@ -4,9 +4,11 @@
     "name": "sandstorm/lightweightelasticsearch",
     "require": {
         "neos/flow": "*",
-        "neos/content-repository-search": "*",
-        "flowpack/elasticsearch": "^5.0 || dev-master",
         "flowpack/listable": "*"
+    },
+    "conflict": {
+        "neos/content-repository-search": "*",
+        "flowpack/elasticsearch-contentrepositoryadaptor": "*"
     },
     "autoload": {
         "psr-4": {

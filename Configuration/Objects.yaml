@@ -1,3 +1,0 @@
-Neos\ContentRepository\Search\Indexer\NodeIndexerInterface:
-  className: 'Sandstorm\LightweightElasticsearch\DocumentIndexing\DocumentNodeIndexer'
-
