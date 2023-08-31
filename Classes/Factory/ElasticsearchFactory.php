@@ -7,19 +7,19 @@ use Neos\ContentRepository\Core\Factory\ContentRepositoryId;
 use Neos\ContentRepositoryRegistry\ContentRepositoryRegistry;
 use Neos\Eel\CompilingEvaluator;
 use Neos\Flow\Annotations as Flow;
-use Sandstorm\LightweightElasticsearch\Core\DocumentIndexing\AliasManager;
-use Sandstorm\LightweightElasticsearch\Core\DocumentIndexing\BulkRequestSenderFactory;
-use Sandstorm\LightweightElasticsearch\Core\DocumentIndexing\DocumentIndexer;
-use Sandstorm\LightweightElasticsearch\Core\DocumentIndexing\IndexingEelEvaluator;
-use Sandstorm\LightweightElasticsearch\Core\Elasticsearch;
-use Sandstorm\LightweightElasticsearch\Core\ElasticsearchApiClient\ApiCaller;
-use Sandstorm\LightweightElasticsearch\Core\ElasticsearchApiClient\ApiCalls\AliasApiCalls;
-use Sandstorm\LightweightElasticsearch\Core\ElasticsearchApiClient\ApiCalls\BulkApiCalls;
-use Sandstorm\LightweightElasticsearch\Core\ElasticsearchApiClient\ApiCalls\IndexApiCalls;
-use Sandstorm\LightweightElasticsearch\Core\ElasticsearchApiClient\ApiCalls\SearchApiCalls;
-use Sandstorm\LightweightElasticsearch\Core\ElasticsearchApiClient\ElasticsearchApiClient;
-use Sandstorm\LightweightElasticsearch\Core\NodeTypeMapping\NodeTypeMappingBuilder;
-use Sandstorm\LightweightElasticsearch\Core\Settings\ElasticsearchSettings;
+use Sandstorm\LightweightElasticsearch\Indexing\AliasManager;
+use Sandstorm\LightweightElasticsearch\Indexing\BulkRequestSenderFactory;
+use Sandstorm\LightweightElasticsearch\Indexing\SubgraphIndexer;
+use Sandstorm\LightweightElasticsearch\Indexing\IndexingEelEvaluator;
+use Sandstorm\LightweightElasticsearch\Elasticsearch;
+use Sandstorm\LightweightElasticsearch\ElasticsearchApiClient\ApiCaller;
+use Sandstorm\LightweightElasticsearch\ElasticsearchApiClient\ApiCalls\AliasApiCalls;
+use Sandstorm\LightweightElasticsearch\ElasticsearchApiClient\ApiCalls\BulkApiCalls;
+use Sandstorm\LightweightElasticsearch\ElasticsearchApiClient\ApiCalls\IndexApiCalls;
+use Sandstorm\LightweightElasticsearch\ElasticsearchApiClient\ApiCalls\SearchApiCalls;
+use Sandstorm\LightweightElasticsearch\ElasticsearchApiClient\ElasticsearchApiClient;
+use Sandstorm\LightweightElasticsearch\NodeTypeMapping\NodeTypeMappingBuilder;
+use Sandstorm\LightweightElasticsearch\Settings\ElasticsearchSettings;
 
 #[Flow\Scope("singleton")]
 class ElasticsearchFactory
@@ -67,7 +67,7 @@ class ElasticsearchFactory
             contentRepository: $contentRepository,
             apiClient: $apiClient,
             nodeTypeMappingBuilder: new NodeTypeMappingBuilder($settings->defaultConfigurationPerType),
-            documentIndexer: new DocumentIndexer(
+            documentIndexer: new SubgraphIndexer(
                 new BulkRequestSenderFactory(
                     $apiClient,
                     $settings

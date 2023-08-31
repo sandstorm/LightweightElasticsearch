@@ -12,9 +12,9 @@ use Neos\Eel\ProtectedContextAwareInterface;
 use Neos\Flow\Log\ThrowableStorageInterface;
 use Neos\Flow\Log\Utility\LogEnvironment;
 use Psr\Log\LoggerInterface;
-use Sandstorm\LightweightElasticsearch\Core\ElasticsearchApiClient\ElasticsearchApiClient;
-use Sandstorm\LightweightElasticsearch\Core\Settings\ElasticsearchSettings;
-use Sandstorm\LightweightElasticsearch\Core\SharedModel\AliasName;
+use Sandstorm\LightweightElasticsearch\ElasticsearchApiClient\ElasticsearchApiClient;
+use Sandstorm\LightweightElasticsearch\Settings\ElasticsearchSettings;
+use Sandstorm\LightweightElasticsearch\SharedModel\AliasName;
 use Symfony\Component\DependencyInjection\Alias;
 
 

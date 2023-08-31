@@ -17,7 +17,7 @@ Neos:
 
   Fusion:
     defaultContext:
-      'Elasticsearch': Sandstorm\LightweightElasticsearch\Query\ElasticsearchHelper
+      'Elasticsearch': Sandstorm\LightweightElasticsearch\Query\Eel\ElasticsearchHelper
 
 
 Sandstorm:
@@ -55,4 +55,4 @@ Sandstorm:
       String: Neos\Eel\Helper\StringHelper
       Array: Neos\Eel\Helper\ArrayHelper
       Date: Neos\Eel\Helper\DateHelper
-      Indexing: Sandstorm\LightweightElasticsearch\Eel\IndexingHelper
+      Indexing: Sandstorm\LightweightElasticsearch\Indexing\Eel\IndexingHelper
