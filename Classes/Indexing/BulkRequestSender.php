@@ -45,17 +45,28 @@ class BulkRequestSender
     ) {
     }
 
-    public function indexDocument(string $elasticsearchDocumentId, array $documentData): void
+    public function indexDocument(array $documentData, string $documentId = null): void
     {
-        $this->addPayloadLine(
-            [
-                'index' => [
-                    '_id' => $elasticsearchDocumentId,
-                    '_index' => $this->indexName->value,
-                ]
-            ],
-            $documentData
-        );
+        if ($documentId === null) {
+            $this->addPayloadLine(
+                [
+                    'index' => [
+                        '_index' => $this->indexName->value,
+                    ]
+                ],
+                $documentData
+            );
+        } else {
+            $this->addPayloadLine(
+                [
+                    'index' => [
+                        '_id' => $documentId,
+                        '_index' => $this->indexName->value,
+                    ]
+                ],
+                $documentData
+            );
+        }
     }
 
     private function addPayloadLine(array $headerLine, array $bodyLine): self

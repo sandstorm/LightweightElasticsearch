@@ -9,7 +9,6 @@ use Sandstorm\LightweightElasticsearch\ElasticsearchApiClient\ApiCalls\BulkApiCa
 use Sandstorm\LightweightElasticsearch\ElasticsearchApiClient\ApiCalls\IndexApiCalls;
 use Sandstorm\LightweightElasticsearch\ElasticsearchApiClient\ApiCalls\IngestPipelineApiCalls;
 use Sandstorm\LightweightElasticsearch\ElasticsearchApiClient\ApiCalls\SearchApiCalls;
-use Sandstorm\LightweightElasticsearch\ElasticsearchApiClient\Dto\AssetContent;
 use Sandstorm\LightweightElasticsearch\Settings\CreateIndexParameters;
 use Sandstorm\LightweightElasticsearch\SharedModel\AliasName;
 use Sandstorm\LightweightElasticsearch\SharedModel\ElasticsearchBaseUrl;

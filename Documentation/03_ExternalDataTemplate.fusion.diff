@@ -61,7 +61,7 @@
  
      // We configure the cache mode "dynamic" here.
 @@ -79,7 +66,6 @@
-             node = ${node}
+             node = ${Neos.Caching.entryIdentifierForNode(node)}
              type = 'searchForm'
          }
 -        // <-- if you add additional aggregations, you need to add the parameter names to the entryDiscriminator

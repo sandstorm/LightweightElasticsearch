@@ -76,7 +76,7 @@ prototype(My.Package:Search) < prototype(Neos.Fusion:Component) {
     @cache {
         mode = 'dynamic'
         entryIdentifier {
-            node = ${node}
+            node = ${Neos.Caching.entryIdentifierForNode(node)}
             type = 'searchForm'
         }
         // <-- if you add additional aggregations, you need to add the parameter names to the entryDiscriminator

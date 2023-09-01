@@ -11,10 +11,10 @@ use Neos\ContentRepository\Core\Projection\ContentGraph\NodeTypeConstraints;
 use Neos\ContentRepository\Core\Projection\Workspace\Workspace;
 use Neos\ContentRepository\Core\SharedModel\Node\NodeAggregateId;
 use Neos\Flow\Log\Utility\LogEnvironment;
-use Psr\Log\LoggerInterface;
 use Sandstorm\LightweightElasticsearch\Elasticsearch;
 use Sandstorm\LightweightElasticsearch\Settings\ElasticsearchSettings;
 use Sandstorm\LightweightElasticsearch\Settings\NodeTypeSearchSettings;
+use Sandstorm\LightweightElasticsearch\SharedModel\IndexDiscriminator;
 use Sandstorm\LightweightElasticsearch\SharedModel\IndexName;
 use Sandstorm\LightweightElasticsearch\SharedModel\MappingDefinition;
 
@@ -53,6 +53,7 @@ class SubgraphIndexer
         foreach ($documentNodes as $childNode) {
             $this->indexDocumentNodeAndContent($childNode, $subgraph, $workspace, $bulkRequestSender, $elasticsearch);
 
+            // recursion
             $this->indexDocumentNodesRecursively($childNode->nodeAggregateId, $subgraph, $workspace, $bulkRequestSender, $elasticsearch);
         }
     }
@@ -62,14 +63,11 @@ class SubgraphIndexer
      */
     private function indexDocumentNodeAndContent(Node $node, ContentSubgraphInterface $subgraph, Workspace $workspace, BulkRequestSender $bulkRequestSender, Elasticsearch $elasticsearch): void
     {
-
         $nodeTypeSearchSettings = NodeTypeSearchSettings::fromNodeType($node->nodeType, $this->settings->defaultConfigurationPerType);
         if (!$nodeTypeSearchSettings->isIndexed) {
             $elasticsearch->logger->debug(sprintf('Node "%s" (%s) skipped, Node Type is not allowed in the index (search.isIndexed not set).', $node->nodeAggregateId->value, $node->nodeTypeName->value), LogEnvironment::fromMethodName(__METHOD__));
             return;
         }
-
-        $elasticsearchDocumentId = $node->nodeAggregateId->value;
 
         $elasticsearchDocument = $this->extractNodePropertiesForIndexing($nodeTypeSearchSettings, $node, $elasticsearch);
         if ($nodeTypeSearchSettings->isFulltextRoot) {
@@ -84,7 +82,10 @@ class SubgraphIndexer
 
         $elasticsearchDocument['neos_workspace'] = $workspace->workspaceName->value;
         $elasticsearchDocument[MappingDefinition::NEOS_TYPE_FIELD] = $node->nodeTypeName->value;
-        $bulkRequestSender->indexDocument($elasticsearchDocumentId, $elasticsearchDocument);
+        $elasticsearchDocument[IndexDiscriminator::KEY] = IndexDiscriminator::NEOS_NODES;
+
+        $elasticsearchDocumentId = $node->nodeAggregateId->value;
+        $bulkRequestSender->indexDocument($elasticsearchDocument, $elasticsearchDocumentId);
     }
 
     private function extractNodePropertiesForIndexing(NodeTypeSearchSettings $nodeTypeSearchSettings, Node $node, Elasticsearch $elasticsearch): mixed

@@ -371,7 +371,7 @@ prototype(My.Package:Search) < prototype(Neos.Fusion:Component) {
     @cache {
         mode = 'dynamic'
         entryIdentifier {
-            node = ${node}
+            node = ${Neos.Caching.entryIdentifierForNode(node)}
             type = 'searchForm'
         }
         entryDiscriminator = ${request.arguments.q + '-' + request.arguments.currentPage}
@@ -563,7 +563,7 @@ Here follows the list of modifications done to the template above:
  
      // We configure the cache mode "dynamic" here.
 @@ -41,7 +79,8 @@
-             node = ${node}
+             node = ${Neos.Caching.entryIdentifierForNode(node)}
              type = 'searchForm'
          }
 -        entryDiscriminator = ${request.arguments.q + '-' + request.arguments.currentPage}
@@ -659,7 +659,7 @@ prototype(My.Package:Search) < prototype(Neos.Fusion:Component) {
     @cache {
         mode = 'dynamic'
         entryIdentifier {
-            node = ${node}
+            node = ${Neos.Caching.entryIdentifierForNode(node)}
             type = 'searchForm'
         }
         // <-- if you add additional aggregations, you need to add the parameter names to the entryDiscriminator
@@ -821,7 +821,7 @@ prototype(My.Package:Search) < prototype(Neos.Fusion:Component) {
     @cache {
         mode = 'dynamic'
         entryIdentifier {
-            node = ${node}
+            node = ${Neos.Caching.entryIdentifierForNode(node)}
             type = 'searchForm'
         }
         // <-- if you add additional aggregations, you need to add the parameter names to the entryDiscriminator
@@ -893,18 +893,40 @@ For your convenience, a full CommandController can be copied/pasted below:
 
 ```
 <?php
+declare(strict_types=1);
 
 namespace Your\Package\Command;
 
+use Neos\ContentRepository\Core\Factory\ContentRepositoryId;
+use Neos\Flow\Annotations as Flow;
 use Neos\Flow\Cli\CommandController;
-use Sandstorm\LightweightElasticsearch\CustomIndexing\CustomIndexer;
+use Neos\Flow\Log\Backend\ConsoleBackend;
+use Neos\Flow\Log\Psr\Logger;
+use Sandstorm\LightweightElasticsearch\Factory\ElasticsearchFactory;
+use Sandstorm\LightweightElasticsearch\Indexing\CustomIndexer;
+use Sandstorm\LightweightElasticsearch\SharedModel\AliasName;
+use Sandstorm\LightweightElasticsearch\SharedModel\IndexDiscriminator;
 
 class CustomIndexCommandController extends CommandController
 {
 
+    #[Flow\Inject]
+    protected ElasticsearchFactory $elasticsearchFactory;
+
     public function indexCommand()
     {
-        $indexer = CustomIndexer::create('faq');
+        $logBackend = new ConsoleBackend();
+        $logBackend->setSeverityThreshold(LOG_DEBUG);
+        $logger = new Logger([$logBackend]);
+
+        $elasticsearch = $this->elasticsearchFactory->build(
+            ContentRepositoryId::fromString('default'),
+            $logger
+        );
+        $indexer = $elasticsearch->customIndexer(
+            AliasName::createForCustomIndex('custom_faq'),
+            IndexDiscriminator::createForCustomIndex('custom_faq')
+        );
         $indexer->createIndexWithMapping(['properties' => [
             'faqEntryTitle' => [
                 'type' => 'text'
@@ -991,13 +1013,13 @@ class MyQueries implements ProtectedContextAwareInterface
         return BooleanQueryBuilder::create()
             ->filter(TermQueryBuilder::create('index_discriminator', 'faq'))
             ->must(
-                SimpleQueryStringBuilder::create($query ?? '')->fields([
+                SimpleQueryStringBuilder::create($query)->fields([
                     'faqEntryTitle^5',
                 ])
             );
     }
 
-    public function allowsCallOfMethod($methodName)
+    public function allowsCallOfMethod($methodName): bool
     {
         return true;
     }
@@ -1115,7 +1137,7 @@ See the following diff, or the full source code below:
  
      // We configure the cache mode "dynamic" here.
 @@ -79,7 +66,6 @@
-             node = ${node}
+             node = ${Neos.Caching.entryIdentifierForNode(node)}
              type = 'searchForm'
          }
 -        // <-- if you add additional aggregations, you need to add the parameter names to the entryDiscriminator
@@ -1209,7 +1231,7 @@ prototype(My.Package:Search) < prototype(Neos.Fusion:Component) {
     @cache {
         mode = 'dynamic'
         entryIdentifier {
-            node = ${node}
+            node = ${Neos.Caching.entryIdentifierForNode(node)}
             type = 'searchForm'
         }
         entryDiscriminator = ${request.arguments.q + '-' + request.arguments.currentPage + '-' + request.arguments.nodeTypesFilter}

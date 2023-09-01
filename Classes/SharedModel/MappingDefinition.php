@@ -39,6 +39,7 @@ class MappingDefinition implements \JsonSerializable
         return new self([
             'properties' => [
                 self::NEOS_TYPE_FIELD => ['type' => 'keyword'],
+                IndexDiscriminator::KEY => ['type' => 'keyword'],
             ]
         ]);
     }

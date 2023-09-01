@@ -8,10 +8,16 @@ use Flowpack\ElasticSearch\Domain\Factory\ClientFactory;
 use Flowpack\ElasticSearch\Domain\Model\GenericType;
 use Flowpack\ElasticSearch\Domain\Model\Index;
 use Flowpack\ElasticSearch\Domain\Model\Mapping;
+use Psr\Log\LoggerInterface;
+use Sandstorm\LightweightElasticsearch\ElasticsearchApiClient\ApiCaller;
+use Sandstorm\LightweightElasticsearch\ElasticsearchApiClient\ElasticsearchApiClient;
+use Sandstorm\LightweightElasticsearch\Settings\ElasticsearchSettings;
+use Sandstorm\LightweightElasticsearch\SharedModel\AliasName;
+use Sandstorm\LightweightElasticsearch\SharedModel\IndexDiscriminator;
+use Sandstorm\LightweightElasticsearch\SharedModel\IndexName;
+use Sandstorm\LightweightElasticsearch\SharedModel\MappingDefinition;
 
 /**
- * TODO IMPLEMENT ME
- *
  * Helper to use for indexing custom data sources into Elasticsearch.
  *
  * USAGE - INDEXING
@@ -36,71 +42,26 @@ use Flowpack\ElasticSearch\Domain\Model\Mapping;
  *
  * @api
  */
+#[Flow\Proxy(false)]
 class CustomIndexer
 {
-    /**
-     * _Flow\Inject
-     * @var ClientFactory
-     */
-    protected $clientFactory;
-
-    /**
-     * _Flow\Inject
-     * @var IndexAliasManager
-     */
-    protected $indexAliasManager;
-
-    /**
-     * _Flow\Inject
-     * @var IndexDriverInterface
-     */
-    protected $indexDriver;
-
-
-    private \Flowpack\ElasticSearch\Domain\Model\Client $elasticsearchClient;
-
-    protected string $aliasName;
-    protected string $discriminatorValue;
-    protected string $indexName;
-    protected ?Index $index;
 
     protected int $bulkSize = 100;
-    protected array $currentBulkRequest = [];
-
 
     /**
-     * Create a custom indexer with the given $aliasName as index alias (i.e. what you specify in the 2nd argument
-     * of `Elasticsearch.createRequest(site, ['myAlias'])` in Eel).
-     *
-     * The given $discriminatorValue is used as value of the `index_discriminator` key in every indexed document;
-     * and can be used to distinguish different document types inside a query.
-     *
-     * If no $discriminatorValue is specified, the $aliasName is used by default.
-     *
-     * @param string $aliasName name of the Elasticsearch alias to create/update when indexing is completed
-     * @param string|null $discriminatorValue value of the index_discriminator field of all documents indexed by this indexer. If null, $aliasName is used.
-     * @return CustomIndexer
+     * @internal only to be called from {@see CustomIndexerFactory::build()}
      */
-    public static function create(string $aliasName, string $discriminatorValue = null): CustomIndexer
-    {
-        if ($discriminatorValue === null) {
-            $discriminatorValue = $aliasName;
-        }
+    public function __construct(
+        private readonly IndexName $indexName,
+        private readonly AliasName $aliasName,
+        private readonly IndexDiscriminator $discriminator,
+        private readonly BulkRequestSender $bulkRequestSender,
 
-        return new CustomIndexer($aliasName, $discriminatorValue);
-    }
-
-    protected function __construct(string $aliasName, string $discriminatorValue)
-    {
-        $this->aliasName = $aliasName;
-        $this->discriminatorValue = $discriminatorValue;
-        $this->indexName = $aliasName . '-' . time();
-    }
-
-    public function initializeObject()
-    {
-        $this->elasticsearchClient = $this->clientFactory->create();
-        $this->index = new Index($this->indexName, $this->elasticsearchClient);
+        private readonly LoggerInterface $logger,
+        private readonly ElasticsearchSettings $settings,
+        private readonly ElasticsearchApiClient $apiClient,
+        private readonly AliasManager $aliasManager,
+    ) {
     }
 
     /**
@@ -112,25 +73,18 @@ class CustomIndexer
      */
     public function createIndexWithMapping(array $fullMapping): void
     {
-        $this->index->create();
-        $mapping = new Mapping(new GenericType($this->index, $this->discriminatorValue));
+        $this->logger->info('Creating custom Index: ' . $this->indexName->value);
+        if ($this->apiClient->hasIndex($this->indexName)) {
+            $this->logger->info('  Index exists, removing and recreating');
+            $this->apiClient->removeIndex($this->indexName);
+        }
+        $this->apiClient->createIndex($this->indexName, $this->settings->createIndexParameters($this->indexName));
 
         // enforce correct type of index_discriminator
-        $fullMapping['properties']['index_discriminator'] = [
+        $fullMapping['properties'][IndexDiscriminator::KEY] = [
             'type' => 'keyword'
         ];
-
-        $mapping->setFullMapping($fullMapping);
-        $mapping->apply();
-    }
-
-    /**
-     * Determines after how many calls to index() the request is sent to Elasticsearch
-     * @param int $bulkSize
-     */
-    public function setBulkSize(int $bulkSize): void
-    {
-        $this->bulkSize = $bulkSize;
+        $this->apiClient->updateMapping($this->indexName, MappingDefinition::fromArray($fullMapping));
     }
 
     /**
@@ -141,51 +95,19 @@ class CustomIndexer
      */
     public function index(array $documentProperties, ?string $documentId = null): void
     {
-        if ($documentId !== null) {
-            $this->currentBulkRequest[] = [
-                'index' => [
-                    '_id' => $documentId,
-                ]
-            ];
-        } else {
-            $this->currentBulkRequest[] = [
-                'index' => new \stdClass()
-            ];
-        }
-
-        $documentProperties['index_discriminator'] = $this->discriminatorValue;
-        $this->currentBulkRequest[] = $documentProperties;
-
-        // for every request, we have two rows in $this->currentBulkRequest
-        if (count($this->currentBulkRequest) / 2 >= $this->bulkSize) {
-            $this->sendCurrentBulkRequest();
-        }
-    }
-
-    protected function sendCurrentBulkRequest(): void
-    {
-        if (count($this->currentBulkRequest) > 0) {
-            // Bulk request MUST end with line return
-            $request = implode("\n", array_map(fn($requestPart) => json_encode($requestPart), $this->currentBulkRequest)) . "\n";
-
-            $this->index->request('POST', '/_bulk', [], $request);
-        }
-
-        $this->currentBulkRequest = [];
+        $documentProperties['index_discriminator'] = $this->discriminator->value;
+        $this->bulkRequestSender->indexDocument($documentProperties, $documentId);
     }
 
     /**
      * Send the last bulk request to ensure indexing is completed; and then switch the index alias, so that
      * documents can be found.
-     *
-     * @throws \Flowpack\ElasticSearch\ContentRepositoryAdaptor\Exception
-     * @throws \Flowpack\ElasticSearch\Exception
-     * @throws \Flowpack\ElasticSearch\Transfer\Exception\ApiException
      */
     public function finalizeAndSwitchAlias(): void
     {
-        $this->sendCurrentBulkRequest();
-        $this->indexAliasManager->updateIndexAlias($this->aliasName, $this->indexName);
+        $this->bulkRequestSender->close();
+        $this->logger->info('-> updating aliases');
+        $this->aliasManager->updateIndexAlias($this->aliasName, $this->indexName);
     }
 
     /**
@@ -199,6 +121,7 @@ class CustomIndexer
      */
     public function removeObsoleteIndices(): array
     {
+        throw new \RuntimeException('TODO IMPLEMENT ME');
         $currentlyLiveIndices = $this->indexDriver->getIndexNamesByAlias($this->aliasName);
 
         $indexStatus = $this->elasticsearchClient->request('GET', '/_stats')->getTreatedContent();

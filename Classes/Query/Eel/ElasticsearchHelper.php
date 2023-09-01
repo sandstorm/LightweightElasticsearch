@@ -13,17 +13,22 @@ namespace Sandstorm\LightweightElasticsearch\Query\Eel;
  * source code.
  */
 
+use Neos\Flow\Annotations as Flow;
 use Neos\ContentRepository\Core\Factory\ContentRepositoryId;
 use Neos\ContentRepository\Core\Projection\ContentGraph\Node;
 use Neos\ContentRepositoryRegistry\ContentRepositoryRegistry;
 use Neos\Eel\ProtectedContextAwareInterface;
+use Psr\Log\LoggerInterface;
+use Sandstorm\LightweightElasticsearch\ElasticsearchApiClient\ElasticsearchApiClient;
 use Sandstorm\LightweightElasticsearch\Factory\ElasticsearchFactory;
 use Sandstorm\LightweightElasticsearch\Query\Aggregation\TermsAggregationBuilder;
+use Sandstorm\LightweightElasticsearch\Query\AggregationRequestBuilder;
 use Sandstorm\LightweightElasticsearch\Query\Highlight\NeosFulltextHighlightBuilder;
 use Sandstorm\LightweightElasticsearch\Query\Query\BooleanQueryBuilder;
 use Sandstorm\LightweightElasticsearch\Query\Query\NeosFulltextQueryBuilder;
 use Sandstorm\LightweightElasticsearch\Query\Query\TermQueryBuilder;
 use Sandstorm\LightweightElasticsearch\Query\SearchRequestBuilder;
+use Sandstorm\LightweightElasticsearch\Settings\ElasticsearchSettings;
 
 /**
  * Eel Helper to write search queries.
@@ -41,6 +46,8 @@ use Sandstorm\LightweightElasticsearch\Query\SearchRequestBuilder;
  */
 class ElasticsearchHelper implements ProtectedContextAwareInterface
 {
+    #[Flow\Inject]
+    protected LoggerInterface $logger;
     public function __construct(
         private readonly ContentRepositoryRegistry $contentRepositoryRegistry,
         private readonly ElasticsearchFactory $elasticsearchFactory,
@@ -52,8 +59,12 @@ class ElasticsearchHelper implements ProtectedContextAwareInterface
      */
     public function createRequest(Node $contextNode = null, array $additionalIndices = []): SearchRequestBuilder
     {
-        $elasticsearch = $this->elasticsearchFactory->build($contextNode?->subgraphIdentity->contentRepositoryId ?? ContentRepositoryId::fromString('default'));
-        return new SearchRequestBuilder($this->contentRepositoryRegistry, $elasticsearch->settings, $elasticsearch->apiClient, $contextNode, $additionalIndices);
+        $contentRepositoryId = $contextNode?->subgraphIdentity->contentRepositoryId ?? ContentRepositoryId::fromString('default');
+        $elasticsearch = $this->elasticsearchFactory->build(
+            $contentRepositoryId,
+            $this->logger
+        );
+        return new SearchRequestBuilder($this->contentRepositoryRegistry, $elasticsearch, $contextNode, $additionalIndices);
     }
 
     public function createBooleanQuery(): BooleanQueryBuilder
@@ -71,9 +82,14 @@ class ElasticsearchHelper implements ProtectedContextAwareInterface
         return TermQueryBuilder::create($fieldName, $value);
     }
 
-    public function createAggregationRequest(NodeInterface $contextNode = null, array $additionalIndices = []): AggregationRequestBuilder
+    public function createAggregationRequest(Node $contextNode = null, array $additionalIndices = []): AggregationRequestBuilder
     {
-        return new AggregationRequestBuilder($contextNode, $additionalIndices);
+        $contentRepositoryId = $contextNode?->subgraphIdentity->contentRepositoryId ?? ContentRepositoryId::fromString('default');
+        $elasticsearch = $this->elasticsearchFactory->build(
+            $contentRepositoryId,
+            $this->logger
+        );
+        return new AggregationRequestBuilder($this->contentRepositoryRegistry, $elasticsearch, $contextNode, $additionalIndices);
     }
 
     public function createTermsAggregation(string $fieldName, ?string $selectedValue = null): TermsAggregationBuilder

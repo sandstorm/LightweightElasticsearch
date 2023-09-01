@@ -69,7 +69,7 @@
  
      // We configure the cache mode "dynamic" here.
 @@ -41,7 +79,8 @@
-             node = ${node}
+             node = ${Neos.Caching.entryIdentifierForNode(node)}
              type = 'searchForm'
          }
 -        entryDiscriminator = ${request.arguments.q + '-' + request.arguments.currentPage}

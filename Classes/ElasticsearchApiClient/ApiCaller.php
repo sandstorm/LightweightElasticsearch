@@ -23,7 +23,9 @@ use Psr\Http\Message\UriInterface;
 use Sandstorm\LightweightElasticsearch\Settings\ElasticsearchSettings;
 
 /**
- * Handles the requests
+ * Handles the API requests. Implementation detail of the {@see ElasticsearchApiClient} and the relevant API Calls.
+ *
+ * @internal
  */
 class ApiCaller
 {

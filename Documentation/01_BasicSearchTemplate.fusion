@@ -38,7 +38,7 @@ prototype(My.Package:Search) < prototype(Neos.Fusion:Component) {
     @cache {
         mode = 'dynamic'
         entryIdentifier {
-            node = ${node}
+            node = ${Neos.Caching.entryIdentifierForNode(node)}
             type = 'searchForm'
         }
         entryDiscriminator = ${request.arguments.q + '-' + request.arguments.currentPage}

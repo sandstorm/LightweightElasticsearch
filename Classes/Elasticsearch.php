@@ -8,11 +8,14 @@ use Neos\ContentRepository\Core\ContentRepository;
 use Neos\ContentRepository\Core\SharedModel\Workspace\WorkspaceName;
 use Psr\Log\LoggerInterface;
 use Sandstorm\LightweightElasticsearch\Indexing\AliasManager;
+use Sandstorm\LightweightElasticsearch\Indexing\CustomIndexer;
+use Sandstorm\LightweightElasticsearch\Indexing\CustomIndexerFactory;
 use Sandstorm\LightweightElasticsearch\Indexing\SubgraphIndexer;
 use Sandstorm\LightweightElasticsearch\ElasticsearchApiClient\ElasticsearchApiClient;
 use Sandstorm\LightweightElasticsearch\NodeTypeMapping\NodeTypeMappingBuilder;
 use Sandstorm\LightweightElasticsearch\Settings\ElasticsearchSettings;
 use Sandstorm\LightweightElasticsearch\SharedModel\AliasName;
+use Sandstorm\LightweightElasticsearch\SharedModel\IndexDiscriminator;
 use Sandstorm\LightweightElasticsearch\SharedModel\IndexName;
 use Sandstorm\LightweightElasticsearch\SharedModel\IndexGeneration;
 use Sandstorm\LightweightElasticsearch\Factory\ElasticsearchFactory;
@@ -70,7 +73,8 @@ class Elasticsearch
         private readonly NodeTypeMappingBuilder $nodeTypeMappingBuilder,
         private readonly SubgraphIndexer $documentIndexer,
         private readonly AliasManager $aliasManager,
-        public readonly LoggerInterface $logger
+        public readonly LoggerInterface $logger,
+        private readonly CustomIndexerFactory $customIndexerFactory
     ) {
     }
 
@@ -111,5 +115,23 @@ class Elasticsearch
             $this->logger->info('Dimension space point: ' . $dimensionSpacePoint->toJson() . ' -> updating aliases');
             $this->aliasManager->updateIndexAlias($aliasName, $indexName);
         }
+    }
+
+    /**
+     * Create a custom indexer with the given $aliasName as index alias (i.e. what you specify in the 2nd argument
+     * of `Elasticsearch.createRequest(site, ['myAlias'])` in Eel).
+     *
+     * The given $discriminatorValue is used as value of the `index_discriminator` key in every indexed document;
+     * and can be used to distinguish different document types inside a query.
+     *
+     * @param AliasName $aliasName name of the Elasticsearch alias to create/update when indexing is completed
+     * @param IndexDiscriminator $discriminator value of the index_discriminator field of all documents indexed by this indexer
+     * @return CustomIndexer
+     */
+    public function customIndexer(AliasName $aliasName, IndexDiscriminator $discriminator): CustomIndexer
+    {
+        $indexName = IndexName::createForAlias($aliasName, IndexGeneration::createFromCurrentTime());
+
+        return $this->customIndexerFactory->build($indexName, $aliasName, $discriminator);
     }
 }

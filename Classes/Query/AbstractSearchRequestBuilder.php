@@ -12,6 +12,7 @@ use Neos\Eel\ProtectedContextAwareInterface;
 use Neos\Flow\Log\ThrowableStorageInterface;
 use Neos\Flow\Log\Utility\LogEnvironment;
 use Psr\Log\LoggerInterface;
+use Sandstorm\LightweightElasticsearch\Elasticsearch;
 use Sandstorm\LightweightElasticsearch\ElasticsearchApiClient\ElasticsearchApiClient;
 use Sandstorm\LightweightElasticsearch\Settings\ElasticsearchSettings;
 use Sandstorm\LightweightElasticsearch\SharedModel\AliasName;
@@ -46,8 +47,7 @@ abstract class AbstractSearchRequestBuilder implements ProtectedContextAwareInte
 
     public function __construct(
         protected readonly ContentRepositoryRegistry $contentRepositoryRegistry,
-        protected readonly ElasticsearchSettings $settings,
-        protected readonly ElasticsearchApiClient $apiClient,
+        protected readonly Elasticsearch $elasticsearch,
         protected readonly Node|null $contextNode = null,
         protected readonly array $additionalAliases = [],
 
@@ -93,14 +93,14 @@ abstract class AbstractSearchRequestBuilder implements ProtectedContextAwareInte
             $aliasNames = $this->additionalAliases;
             if ($this->contextNode !== null) {
                 $aliasNames[] = AliasName::createForWorkspaceAndDimensionSpacePoint(
-                    $this->settings->nodeIndexNamePrefix,
+                    $this->elasticsearch->settings->nodeIndexNamePrefix,
                     $this->contextNode->subgraphIdentity->contentRepositoryId,
                     $this->workspaceName,
                     $this->contextNode->subgraphIdentity->dimensionSpacePoint,
                 );
             }
 
-            $jsonResponse = $this->apiClient->search($aliasNames, $request);
+            $jsonResponse = $this->elasticsearch->apiClient->search($aliasNames, $request);
             $timeAfterwards = microtime(true);
 
             $this->logThisQuery && $this->logger->debug(sprintf('Query Log (%s): Indexname: %s %s -- execution time: %s ms -- Number of results returned: %s -- Total Results: %s', $this->logMessage, implode(',', $aliasNames), json_encode($request), (($timeAfterwards - $timeBefore) * 1000), count($jsonResponse['hits']['hits']), $jsonResponse['hits']['total']['value']), LogEnvironment::fromMethodName(__METHOD__));

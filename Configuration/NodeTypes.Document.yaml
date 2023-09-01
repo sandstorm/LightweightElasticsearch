@@ -4,13 +4,6 @@
     fulltext:
       isRoot: true
   properties:
-    # we include an "index_discriminator" property which is useful lateron for discriminating different query types
-    'index_discriminator':
-      search:
-        elasticSearchMapping:
-          type: keyword
-        indexing: '${"neos_nodes"}'
-
     'uriPathSegment':
       search:
         elasticSearchMapping:

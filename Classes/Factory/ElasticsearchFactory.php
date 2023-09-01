@@ -11,6 +11,8 @@ use Psr\Log\LoggerInterface;
 use Sandstorm\LightweightElasticsearch\ElasticsearchApiClient\ApiCalls\IngestPipelineApiCalls;
 use Sandstorm\LightweightElasticsearch\Indexing\AliasManager;
 use Sandstorm\LightweightElasticsearch\Indexing\BulkRequestSenderFactory;
+use Sandstorm\LightweightElasticsearch\Indexing\CustomIndexer;
+use Sandstorm\LightweightElasticsearch\Indexing\CustomIndexerFactory;
 use Sandstorm\LightweightElasticsearch\Indexing\SubgraphIndexer;
 use Sandstorm\LightweightElasticsearch\Indexing\IndexingEelEvaluator;
 use Sandstorm\LightweightElasticsearch\Elasticsearch;
@@ -65,6 +67,14 @@ class ElasticsearchFactory
         $contentRepository = $this->contentRepositoryRegistry->get($contentRepositoryId);
         $apiClient = $this->buildElasticsearchApiClient($settings);
 
+        $aliasManager = new AliasManager(
+            $apiClient
+        );
+        $bulkRequestSenderFactory = new BulkRequestSenderFactory(
+            $apiClient,
+            $settings
+        );
+
         return new Elasticsearch(
             settings: $settings,
             contentRepository: $contentRepository,
@@ -74,20 +84,23 @@ class ElasticsearchFactory
                 $logger
             ),
             documentIndexer: new SubgraphIndexer(
-                new BulkRequestSenderFactory(
-                    $apiClient,
-                    $settings
-                ),
+                $bulkRequestSenderFactory,
                 new IndexingEelEvaluator(
                     $this->eelEvaluator,
                     $settings
                 ),
                 $settings
             ),
-            aliasManager: new AliasManager(
-                $apiClient
-            ),
-            logger: $logger
+            aliasManager: $aliasManager,
+            logger: $logger,
+            customIndexerFactory: new CustomIndexerFactory(
+                bulkRequestSenderFactory: $bulkRequestSenderFactory,
+
+                logger: $logger,
+                settings: $settings,
+                apiClient: $apiClient,
+                aliasManager: $aliasManager
+            )
         );
     }
 }
