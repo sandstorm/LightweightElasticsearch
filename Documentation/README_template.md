@@ -10,31 +10,30 @@ So you see LightweightElasticsearch 2.x is a major rewrite compared to 1.x; with
 which hopefully will serve the community for a long time.
 
 <!-- TOC -->
-
-- [Sandstorm.LightweightElasticsearch](#sandstormlightweightelasticsearch)
-    - [Goals and Limitations](#goals-and-limitations)
-    - [Starting Elasticsearch for development](#starting-elasticsearch-for-development)
-    - [Indexing](#indexing)
-        - [Configurations per property index field](#configurations-per-property-index-field)
-        - [Exclude NodeTypes from indexing](#exclude-nodetypes-from-indexing)
-        - [Indexing configuration per data type](#indexing-configuration-per-data-type)
-        - [Indexing configuration per property](#indexing-configuration-per-property)
-        - [Skip indexing and mapping of a property](#skip-indexing-and-mapping-of-a-property)
-        - [Fulltext Indexing](#fulltext-indexing)
-        - [Working with Dates](#working-with-dates)
-        - [Working with Assets / Attachments](#working-with-assets--attachments)
-    - [Search Component](#search-component)
-    - [Query API](#query-api)
-    - [Aggregations and Faceting](#aggregations-and-faceting)
-    - [Result Highlighting](#result-highlighting)
-    - [Indexing other data](#indexing-other-data)
-    - [Querying other data](#querying-other-data)
-    - [Debugging Elasticsearch queries](#debugging-elasticsearch-queries)
-    - [Developing](#developing)
-        - [Changing this readme](#changing-this-readme)
-    - [License](#license)
-
-<!-- /TOC -->
+* [Sandstorm.LightweightElasticsearch](#sandstormlightweightelasticsearch)
+  * [Goals and Limitations](#goals-and-limitations)
+  * [Starting Elasticsearch for development](#starting-elasticsearch-for-development)
+  * [Indexing](#indexing)
+    * [Configurations per property (index field)](#configurations-per-property-index-field)
+    * [Exclude NodeTypes from indexing](#exclude-nodetypes-from-indexing)
+    * [Indexing configuration per data type](#indexing-configuration-per-data-type)
+    * [Indexing configuration per property](#indexing-configuration-per-property)
+    * [Skip indexing and mapping of a property](#skip-indexing-and-mapping-of-a-property)
+    * [Fulltext Indexing](#fulltext-indexing)
+    * [Working with Dates](#working-with-dates)
+    * [Working with Assets / Attachments](#working-with-assets--attachments)
+  * [Querying](#querying)
+    * [Search Component](#search-component)
+    * [Fusion Query API Basics](#fusion-query-api-basics)
+    * [Aggregations and Faceting](#aggregations-and-faceting)
+    * [Result Highlighting](#result-highlighting)
+  * [Indexing other data](#indexing-other-data)
+  * [Querying other data](#querying-other-data)
+  * [Debugging Elasticsearch queries](#debugging-elasticsearch-queries)
+  * [Developing](#developing)
+    * [Changing this readme](#changing-this-readme)
+  * [License](#license)
+<!-- TOC -->
 
 ## Goals and Limitations
 
@@ -324,7 +323,9 @@ With that, you can for example add the keywords of a file to a higher boosted fi
 ```
 
 
-## Search Component
+## Querying
+
+### Search Component
 
 As the search component usually needs to be heavily adjusted, we only include a snippet which can be copy/pasted
 and adjusted into your project:
@@ -333,7 +334,7 @@ and adjusted into your project:
 ###01_BasicSearchTemplate.fusion###
 ```
 
-## Query API
+### Fusion Query API Basics
 
 Simple Example as Eel expression:
 
@@ -382,7 +383,7 @@ More complex queries for searching through multiple indices can look like this:
 
 **We recommend to build more complex queries through Custom Eel helpers; directly calling the Query Builders of this package**
 
-## Aggregations and Faceting
+### Aggregations and Faceting
 
 Implementing Faceted Search is more difficult than it looks at first sight - so let's first build a mental model
 of how the queries need to work.
@@ -433,12 +434,12 @@ You can also copy/paste the full file:
 
 </details>
 
-## Result Highlighting
+### Result Highlighting
 
 Result highlighting is implemented using the [highlight API](https://www.elastic.co/guide/en/elasticsearch/reference/current/highlighting.html)
 of Elasticsearch.
 
-To enable it, you need to change thef following parts:
+To enable it, you need to change the following parts:
 
 - To use a default highlighting, add the `.highlight(Elasticsearch.createNeosFulltextHighlight())`
   part to your main Elasticsearch query.
@@ -595,7 +596,7 @@ See the following diff, or the full source code below:
 You can also copy/paste the full file:
 
 <details>
-<summary>See the faceted search example</summary>
+<summary>See the external query example</summary>
 
 ```
 ###03_ExternalDataTemplate.fusion###
