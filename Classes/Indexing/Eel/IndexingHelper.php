@@ -79,7 +79,7 @@ class IndexingHelper implements ProtectedContextAwareInterface
      */
     protected function extractNodeTypeNamesAndSupertypesInternal(\Neos\ContentRepository\Core\NodeType\NodeType $nodeType, array &$nodeTypeNames): void
     {
-        $nodeTypeNames[$nodeType->getName()] = $nodeType->getName();
+        $nodeTypeNames[$nodeType->name->value] = $nodeType->name->value;
         foreach ($nodeType->getDeclaredSuperTypes() as $superType) {
             $this->extractNodeTypeNamesAndSupertypesInternal($superType, $nodeTypeNames);
         }
