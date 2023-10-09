@@ -13,6 +13,7 @@ namespace Sandstorm\LightweightElasticsearch\Indexing\Eel;
  * source code.
  */
 
+use Neos\ContentRepository\Core\NodeType\NodeType;
 use Neos\Flow\Annotations as Flow;
 use Neos\ContentRepository\Core\Projection\ContentGraph\Node;
 use Neos\ContentRepositoryRegistry\ContentRepositoryRegistry;
@@ -30,23 +31,14 @@ class IndexingHelper implements ProtectedContextAwareInterface
     // WORKAROUND: set by {@see IndexingEelEvaluator} to ensure the current Elasticsearch entry point instance exists here.
     public static \Sandstorm\LightweightElasticsearch\Elasticsearch $elasticsearch;
 
-    /**
-     * @Flow\Inject
-     * @var AssetExtractorInterface
-     */
-    protected $assetExtractor;
+    #[Flow\Inject]
+    protected AssetExtractorInterface $assetExtractor;
 
-    /**
-     * @Flow\Inject
-     * @var ContentRepositoryRegistry
-     */
-    protected $contentRepositoryRegistry;
+    #[Flow\Inject]
+    protected ContentRepositoryRegistry $contentRepositoryRegistry;
 
-    /**
-     * @Flow\Inject
-     * @var LoggerInterface
-     */
-    protected $logger;
+    #[Flow\Inject]
+    protected LoggerInterface $logger;
 
     public function workspaceNameForNode(Node $node): string
     {
@@ -60,10 +52,10 @@ class IndexingHelper implements ProtectedContextAwareInterface
     /**
      * Returns an array of node type names including the passed $nodeType and all its supertypes, recursively
      *
-     * @param \Neos\ContentRepository\Core\NodeType\NodeType $nodeType
+     * @param NodeType $nodeType
      * @return array<String>
      */
-    public function extractNodeTypeNamesAndSupertypes(\Neos\ContentRepository\Core\NodeType\NodeType $nodeType): array
+    public function extractNodeTypeNamesAndSupertypes(NodeType $nodeType): array
     {
         $nodeTypeNames = [];
         $this->extractNodeTypeNamesAndSupertypesInternal($nodeType, $nodeTypeNames);
@@ -73,11 +65,11 @@ class IndexingHelper implements ProtectedContextAwareInterface
     /**
      * Recursive function for fetching all node type names
      *
-     * @param \Neos\ContentRepository\Core\NodeType\NodeType $nodeType
+     * @param NodeType $nodeType
      * @param array $nodeTypeNames
      * @return void
      */
-    protected function extractNodeTypeNamesAndSupertypesInternal(\Neos\ContentRepository\Core\NodeType\NodeType $nodeType, array &$nodeTypeNames): void
+    protected function extractNodeTypeNamesAndSupertypesInternal(NodeType $nodeType, array &$nodeTypeNames): void
     {
         $nodeTypeNames[$nodeType->name->value] = $nodeType->name->value;
         foreach ($nodeType->getDeclaredSuperTypes() as $superType) {
@@ -108,7 +100,7 @@ class IndexingHelper implements ProtectedContextAwareInterface
     /**
      * Convert an array of nodes to an array of node property
      *
-     * @param array<NodeInterface> $nodes
+     * @param array<Node> $nodes
      * @param string $propertyName
      * @return array
      */
@@ -188,10 +180,11 @@ class IndexingHelper implements ProtectedContextAwareInterface
     }
 
     /**
-     * Extract the asset content and meta data
+     * Extract the asset content and metadata
      *
      * @param AssetInterface|AssetInterface[]|null $value
      * @param string $field
+     * @return array|string|null
      */
     public function extractAssetContent(mixed $value, string $field = 'content'): array|null|string
     {
@@ -215,9 +208,8 @@ class IndexingHelper implements ProtectedContextAwareInterface
      * All methods are considered safe
      *
      * @param string $methodName
-     * @return boolean
      */
-    public function allowsCallOfMethod($methodName)
+    public function allowsCallOfMethod($methodName): bool
     {
         return true;
     }

@@ -4,9 +4,7 @@ declare(strict_types=1);
 namespace Sandstorm\LightweightElasticsearch\Query\Query;
 use Neos\Flow\Annotations as Flow;
 
-/**
- * @Flow\Proxy(false)
- */
+#[Flow\Proxy(false)]
 class TermsQueryBuilder implements SearchQueryBuilderInterface
 {
     /**

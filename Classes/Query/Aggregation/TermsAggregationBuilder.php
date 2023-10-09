@@ -16,9 +16,8 @@ use Sandstorm\LightweightElasticsearch\Query\Query\SearchQueryBuilderInterface;
  * The Terms Aggregation can be additionally used as search filter.
  *
  * See https://www.elastic.co/guide/en/elasticsearch/reference/current/search-aggregations-bucket-terms-aggregation.html for the details of usage.
- *
- * @Flow\Proxy(false)
  */
+#[Flow\Proxy(false)]
 class TermsAggregationBuilder implements AggregationBuilderInterface, SearchQueryBuilderInterface
 {
     private string $fieldName;

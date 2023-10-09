@@ -22,7 +22,7 @@ final class IndexDiscriminator
     ) {
     }
 
-    public static function createForCustomIndex(string $value)
+    public static function createForCustomIndex(string $value): IndexDiscriminator
     {
         return new self($value);
     }

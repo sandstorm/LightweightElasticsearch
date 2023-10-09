@@ -7,13 +7,13 @@ use Neos\ContentRepository\Core\Projection\ContentGraph\Node;
 use Neos\ContentRepositoryRegistry\ContentRepositoryRegistry;
 use Neos\Eel\ProtectedContextAwareInterface;
 use Neos\Flow\Annotations as Flow;
+use ReturnTypeWillChange;
 use Sandstorm\LightweightElasticsearch\Query\SearchRequestBuilder;
 
 /**
  * Wrapper for all search results
- *
- * @Flow\Proxy(false)
  */
+#[Flow\Proxy(false)]
 class SearchResult implements \IteratorAggregate, ProtectedContextAwareInterface, \Countable
 {
 
@@ -21,6 +21,8 @@ class SearchResult implements \IteratorAggregate, ProtectedContextAwareInterface
      * DO NOT CALL THIS DIRECTLY; only to be called from {@see SearchRequestBuilder::execute()}
      *
      * @param array $response
+     * @param Node $contextNode
+     * @param ContentRepositoryRegistry $contentRepositoryRegistry
      * @return static
      * @internal
      */
@@ -72,7 +74,7 @@ class SearchResult implements \IteratorAggregate, ProtectedContextAwareInterface
 
     }
 
-    public function count()
+    public function count(): int
     {
         if (isset($this->response['hits']['hits'])) {
             return count($this->response['hits']['hits']);
@@ -80,7 +82,7 @@ class SearchResult implements \IteratorAggregate, ProtectedContextAwareInterface
         return 0;
     }
 
-    public function allowsCallOfMethod($methodName)
+    public function allowsCallOfMethod($methodName): bool
     {
         return true;
     }

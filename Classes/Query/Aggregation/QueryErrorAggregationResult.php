@@ -8,17 +8,17 @@ use Neos\Flow\Annotations as Flow;
 
 /**
  * Placeholder for an aggregation result in case of a query error
- *
- * @Flow\Proxy(false)
  */
+#[Flow\Proxy(false)]
 class QueryErrorAggregationResult implements AggregationResultInterface, ProtectedContextAwareInterface
 {
 
-    public function isError() {
+    public function isError(): bool
+    {
         return true;
     }
 
-    public function allowsCallOfMethod($methodName)
+    public function allowsCallOfMethod($methodName): bool
     {
         return true;
     }

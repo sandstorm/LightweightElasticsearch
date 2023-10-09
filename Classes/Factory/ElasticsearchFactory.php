@@ -28,10 +28,7 @@ use Sandstorm\LightweightElasticsearch\Settings\ElasticsearchSettings;
 #[Flow\Scope("singleton")]
 class ElasticsearchFactory
 {
-    /**
-     * @Flow\InjectConfiguration(package="Sandstorm.LightweightElasticsearch")
-     * @var array
-     */
+    #[Flow\InjectConfiguration(package: 'Sandstorm.LightweightElasticsearch')]
     protected array $settings;
 
     public function __construct(

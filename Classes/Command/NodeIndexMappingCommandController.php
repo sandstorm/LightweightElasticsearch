@@ -19,20 +19,20 @@ use Flowpack\ElasticSearch\ContentRepositoryAdaptor\Indexer\NodeIndexer;
 use Flowpack\ElasticSearch\ContentRepositoryAdaptor\Service\DimensionsService;
 use Flowpack\ElasticSearch\Domain\Model\Mapping;
 use Neos\ContentRepository\Domain\Service\ContentDimensionCombinator;
+use Neos\ContentRepositoryRegistry\ContentRepositoryRegistry;
 use Neos\Flow\Annotations as Flow;
 use Neos\Flow\Cli\CommandController;
 use Symfony\Component\Yaml\Yaml;
 use function json_encode;
 
 /**
- * Provides CLI features for checking mapping informations
- *
- * @Flow\Scope("singleton")
+ * Provides CLI features for checking mapping information
  */
+#[Flow\Scope('singleton')]
 class NodeIndexMappingCommandController extends CommandController
 {
-    #[\Neos\Flow\Annotations\Inject]
-    protected \Neos\ContentRepositoryRegistry\ContentRepositoryRegistry $contentRepositoryRegistry;
+    #[Flow\Inject]
+    protected ContentRepositoryRegistry $contentRepositoryRegistry;
 
     /**
      * Shows the mapping between dimensions presets and index name
@@ -64,13 +64,12 @@ class NodeIndexMappingCommandController extends CommandController
      * Show the mapping which would be sent to the ElasticSearch server
      *
      * @return void
-     * @throws \Flowpack\ElasticSearch\Exception
      */
     public function mappingCommand(): void
     {
         try {
             $nodeTypeMappingCollection = $this->nodeTypeMappingBuilder->buildMappingInformation($this->nodeIndexer->getIndex());
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             $this->outputLine('Unable to get the current index');
             $this->sendAndExit(1);
         }

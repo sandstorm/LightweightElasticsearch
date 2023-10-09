@@ -29,23 +29,14 @@ use Sandstorm\LightweightElasticsearch\Settings\ElasticsearchSettings;
  */
 class ApiCaller
 {
-    /**
-     * @Flow\Inject
-     * @var Browser
-     */
-    protected $browser;
+    #[Flow\Inject]
+    protected Browser $browser;
 
-    /**
-     * @Flow\Inject
-     * @var ServerRequestFactoryInterface
-     */
-    protected $requestFactory;
+    #[Flow\Inject]
+    protected ServerRequestFactoryInterface $requestFactory;
 
-    /**
-     * @Flow\Inject
-     * @var StreamFactoryInterface
-     */
-    protected $contentStreamFactory;
+    #[Flow\Inject]
+    protected StreamFactoryInterface $contentStreamFactory;
 
     /**
      * @internal

@@ -13,9 +13,6 @@ namespace Sandstorm\LightweightElasticsearch\Command;
  * source code.
  */
 
-use Flowpack\ElasticSearch\ContentRepositoryAdaptor\Exception;
-use Flowpack\ElasticSearch\ContentRepositoryAdaptor\Exception\ConfigurationException;
-use Flowpack\ElasticSearch\Transfer\Exception\ApiException;
 use Neos\ContentRepository\Core\Factory\ContentRepositoryId;
 use Neos\ContentRepository\Core\SharedModel\Workspace\WorkspaceName;
 use Neos\Flow\Annotations as Flow;
@@ -28,17 +25,12 @@ use Sandstorm\LightweightElasticsearch\Factory\ElasticsearchFactory;
 
 /**
  * Provides CLI features for index handling
- *
- * @Flow\Scope("singleton")
  */
 #[Flow\Scope("singleton")]
 class NodeIndexCommandController extends CommandController
 {
-    /**
-     * @Flow\Inject
-     * @var ElasticsearchFactory
-     */
-    protected $elasticsearchFactory;
+    #[Flow\Inject]
+    protected ElasticsearchFactory $elasticsearchFactory;
 
     /**
      * Index all nodes by creating a new index and when everything was completed, switch the index alias.
@@ -59,7 +51,7 @@ class NodeIndexCommandController extends CommandController
         $elasticsearch = $this->elasticsearchFactory->build(ContentRepositoryId::fromString('default'), $logger);
 
 
-        $elasticsearch->indexWorkspace(WorkspaceName::fromString($workspace), $logger);
+        $elasticsearch->indexWorkspace(WorkspaceName::fromString($workspace));
         $this->outputMemoryUsage();
     }
 
@@ -67,8 +59,6 @@ class NodeIndexCommandController extends CommandController
      * Clean up old indexes (i.e. all but the current one)
      *
      * @return void
-     * @throws ConfigurationException
-     * @throws Exception
      */
     public function cleanupCommand(): void
     {
