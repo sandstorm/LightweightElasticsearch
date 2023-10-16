@@ -8,8 +8,8 @@ use Neos\Flow\Annotations as Flow;
 
 /**
  * See https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-bool-query.html for a reference on the fields
- * @Flow\Proxy(false)
  */
+#[Flow\Proxy(false)]
 class BooleanQueryBuilder implements ProtectedContextAwareInterface, SearchQueryBuilderInterface
 {
     private function __construct()
@@ -76,7 +76,7 @@ class BooleanQueryBuilder implements ProtectedContextAwareInterface, SearchQuery
         return $this;
     }
 
-    public function allowsCallOfMethod($methodName)
+    public function allowsCallOfMethod($methodName): bool
     {
         return true;
     }

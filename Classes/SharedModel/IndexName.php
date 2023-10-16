@@ -15,7 +15,7 @@ final class IndexName implements \JsonSerializable
         return new self(strtolower($value));
     }
 
-    public static function createForAlias(AliasName $aliasName, IndexGeneration $indexGeneration)
+    public static function createForAlias(AliasName $aliasName, IndexGeneration $indexGeneration): IndexName
     {
         return self::fromString($aliasName->value . '__' . $indexGeneration->value);
     }

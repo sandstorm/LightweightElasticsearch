@@ -13,12 +13,12 @@ final class AliasName
     ) {
     }
 
-    public static function createForWorkspaceAndDimensionSpacePoint(IndexNamePrefix $prefix, ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName, DimensionSpacePoint $dimensionSpacePoint)
+    public static function createForWorkspaceAndDimensionSpacePoint(IndexNamePrefix $prefix, ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName, DimensionSpacePoint $dimensionSpacePoint): AliasName
     {
         return new self($prefix->value . '-' . $contentRepositoryId->value . '-' . $workspaceName->value . '-' . $dimensionSpacePoint->hash);
     }
 
-    public static function createForCustomIndex(string $aliasName)
+    public static function createForCustomIndex(string $aliasName): AliasName
     {
         return new self($aliasName);
     }

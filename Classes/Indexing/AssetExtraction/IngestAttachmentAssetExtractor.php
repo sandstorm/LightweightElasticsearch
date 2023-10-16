@@ -20,26 +20,18 @@ use Neos\Media\Domain\Model\AssetInterface;
 use Neos\Utility\Arrays;
 use Sandstorm\LightweightElasticsearch\Elasticsearch;
 
-/**
- * @Flow\Scope("singleton")
- */
+#[Flow\Scope('singleton')]
 class IngestAttachmentAssetExtractor implements AssetExtractorInterface
 {
-
-    /**
-     * @Flow\Inject
-     * @var ThrowableStorageInterface
-     */
-    protected $throwableStorage;
+    #[Flow\Inject]
+    protected ThrowableStorageInterface $throwableStorage;
 
     /**
      * Takes an asset and extracts content and meta data.
      *
      * @param AssetInterface $asset
+     * @param Elasticsearch $elasticsearch
      * @return AssetContent
-     * @throws \Flowpack\ElasticSearch\Transfer\Exception
-     * @throws \Flowpack\ElasticSearch\Transfer\Exception\ApiException
-     * @throws \Neos\Flow\Http\Exception
      */
     public function extract(AssetInterface $asset, Elasticsearch $elasticsearch): AssetContent
     {
@@ -112,7 +104,7 @@ class IngestAttachmentAssetExtractor implements AssetExtractorInterface
 
 
     /**
-     * @param $extractedAsset
+     * @param array|null $extractedAsset
      * @return AssetContent
      */
     protected function buildAssetContentObject(?array $extractedAsset): AssetContent

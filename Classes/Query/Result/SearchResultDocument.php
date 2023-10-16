@@ -32,7 +32,7 @@ class SearchResultDocument implements ProtectedContextAwareInterface
         return $subgraph->findNodeById($nodeAggregateId);
     }
 
-    public function getFullSearchHit()
+    public function getFullSearchHit(): array
     {
         return $this->hit;
     }
@@ -67,7 +67,7 @@ class SearchResultDocument implements ProtectedContextAwareInterface
         return $processedHighlights;
     }
 
-    public function allowsCallOfMethod($methodName)
+    public function allowsCallOfMethod($methodName): bool
     {
         return true;
     }

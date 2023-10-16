@@ -13,9 +13,8 @@ use Neos\Flow\Annotations as Flow;
  * Do a fulltext search in Neos nodes, by searching neos_fulltext appropriately.
  *
  * Also allows to further restrict the result set by calling filter().
- *
- * @Flow\Proxy(false)
  */
+#[Flow\Proxy(false)]
 class NeosFulltextQueryBuilder implements SearchQueryBuilderInterface, ProtectedContextAwareInterface
 {
     protected BooleanQueryBuilder $boolQuery;
@@ -85,7 +84,7 @@ class NeosFulltextQueryBuilder implements SearchQueryBuilderInterface, Protected
         return $this->boolQuery->buildQuery();
     }
 
-    public function allowsCallOfMethod($methodName)
+    public function allowsCallOfMethod($methodName): bool
     {
         return true;
     }

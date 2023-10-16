@@ -2,14 +2,8 @@
 
 namespace Sandstorm\LightweightElasticsearch\Indexing;
 
-use Flowpack\ElasticSearch\ContentRepositoryAdaptor\Driver\IndexDriverInterface;
 use Neos\Flow\Annotations as Flow;
-use Flowpack\ElasticSearch\Domain\Factory\ClientFactory;
-use Flowpack\ElasticSearch\Domain\Model\GenericType;
-use Flowpack\ElasticSearch\Domain\Model\Index;
-use Flowpack\ElasticSearch\Domain\Model\Mapping;
 use Psr\Log\LoggerInterface;
-use Sandstorm\LightweightElasticsearch\ElasticsearchApiClient\ApiCaller;
 use Sandstorm\LightweightElasticsearch\ElasticsearchApiClient\ElasticsearchApiClient;
 use Sandstorm\LightweightElasticsearch\Settings\ElasticsearchSettings;
 use Sandstorm\LightweightElasticsearch\SharedModel\AliasName;
@@ -68,8 +62,6 @@ class CustomIndexer
      * Create a new index with the given Elasticsearch mapping.
      *
      * @param array $fullMapping
-     * @throws \Flowpack\ElasticSearch\Exception
-     * @throws \Neos\Flow\Http\Exception
      */
     public function createIndexWithMapping(array $fullMapping): void
     {
@@ -115,9 +107,6 @@ class CustomIndexer
      * making the "old" index a stale one).
      *
      * @return array<string> a list of index names which were removed
-     * @throws \Flowpack\ElasticSearch\Transfer\Exception
-     * @throws \Flowpack\ElasticSearch\Transfer\Exception\ApiException
-     * @throws \Neos\Flow\Http\Exception
      */
     public function removeObsoleteIndices(): array
     {

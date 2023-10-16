@@ -4,7 +4,6 @@ declare(strict_types=1);
 namespace Sandstorm\LightweightElasticsearch\Query;
 
 use Neos\Flow\Annotations as Flow;
-use Flowpack\ElasticSearch\Transfer\Exception\ApiException;
 use Sandstorm\LightweightElasticsearch\Query\Highlight\HighlightBuilderInterface;
 use Sandstorm\LightweightElasticsearch\Query\Query\SearchQueryBuilderInterface;
 use Sandstorm\LightweightElasticsearch\Query\Result\SearchResult;
@@ -12,11 +11,8 @@ use Sandstorm\LightweightElasticsearch\Query\Result\SearchResult;
 
 class SearchRequestBuilder extends AbstractSearchRequestBuilder
 {
-    /**
-     * @Flow\InjectConfiguration("handleElasticsearchExceptions")
-     * @var string
-     */
-    protected $handleElasticsearchExceptions;
+    #[Flow\InjectConfiguration(path: 'handleElasticsearchExceptions')]
+    protected string $handleElasticsearchExceptions;
 
     /**
      * Cached search result
@@ -87,9 +83,6 @@ class SearchRequestBuilder extends AbstractSearchRequestBuilder
      *
      * You can call this method multiple times; and the request is only executed at the first time; and cached
      * for later use.
-     *
-     * @throws \Flowpack\ElasticSearch\Exception
-     * @throws \Neos\Flow\Http\Exception
      */
     public function execute(): SearchResult
     {
@@ -97,7 +90,7 @@ class SearchRequestBuilder extends AbstractSearchRequestBuilder
             try {
                 $jsonResponse = $this->executeInternal($this->request);
                 $this->searchResult = SearchResult::fromElasticsearchJsonResponse($jsonResponse, $this->contextNode, $this->contentRepositoryRegistry);
-            } catch (ApiException $exception) {
+            } catch (\RuntimeException $exception) {
                 if ($this->handleElasticsearchExceptions === 'throw') {
                     throw $exception;
                 }
@@ -112,8 +105,6 @@ class SearchRequestBuilder extends AbstractSearchRequestBuilder
      * DO NOT USE THIS METHOD DIRECTLY; it is implemented to ensure Flowpack.Listable plays well with these objects here.
      *
      * @return int
-     * @throws \Flowpack\ElasticSearch\Exception
-     * @throws \Neos\Flow\Http\Exception
      * @internal
      */
     public function count(): int
@@ -131,7 +122,7 @@ class SearchRequestBuilder extends AbstractSearchRequestBuilder
         return $this->request;
     }
 
-    public function allowsCallOfMethod($methodName)
+    public function allowsCallOfMethod($methodName): bool
     {
         return true;
     }

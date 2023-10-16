@@ -59,6 +59,11 @@ class ElasticsearchApiClient
         $this->bulkApi->bulkIndex($this->apiCaller, $this->baseUrl, $indexName, $payloadLines);
     }
 
+    /**
+     * @param array $aliasNames
+     * @param array $searchRequest
+     * @return array
+     */
     public function search(array $aliasNames, array $searchRequest): array
     {
         foreach ($aliasNames as $alias) {
