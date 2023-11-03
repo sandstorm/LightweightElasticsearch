@@ -2,14 +2,14 @@
 
 namespace Sandstorm\LightweightElasticsearch\Indexing;
 
-use Neos\Flow\Annotations as Flow;
 use Neos\ContentRepository\Core\NodeType\NodeTypeName;
 use Neos\ContentRepository\Core\Projection\ContentGraph\ContentSubgraphInterface;
 use Neos\ContentRepository\Core\Projection\ContentGraph\Filter\FindChildNodesFilter;
+use Neos\ContentRepository\Core\Projection\ContentGraph\Filter\NodeType\NodeTypeCriteria;
 use Neos\ContentRepository\Core\Projection\ContentGraph\Node;
-use Neos\ContentRepository\Core\Projection\ContentGraph\NodeTypeConstraints;
 use Neos\ContentRepository\Core\Projection\Workspace\Workspace;
 use Neos\ContentRepository\Core\SharedModel\Node\NodeAggregateId;
+use Neos\Flow\Annotations as Flow;
 use Neos\Flow\Log\Utility\LogEnvironment;
 use Sandstorm\LightweightElasticsearch\Elasticsearch;
 use Sandstorm\LightweightElasticsearch\Settings\ElasticsearchSettings;
@@ -46,7 +46,7 @@ class SubgraphIndexer
         $documentNodes = $subgraph->findChildNodes(
             $parentNodeAggregateId,
             FindChildNodesFilter::create(
-                nodeTypeConstraints: NodeTypeConstraints::fromFilterString('Neos.Neos:Document')
+                nodeTypes: NodeTypeCriteria::fromFilterString('Neos.Neos:Document')
             )
         );
 
@@ -116,7 +116,7 @@ class SubgraphIndexer
         $contentNodes = $subgraph->findChildNodes(
             $node->nodeAggregateId,
             FindChildNodesFilter::create(
-                nodeTypeConstraints: NodeTypeConstraints::fromFilterString('Neos.Neos:Content,Neos.Neos:ContentCollection')
+                nodeTypes: NodeTypeCriteria::fromFilterString('Neos.Neos:Content,Neos.Neos:ContentCollection')
             )
         );
         foreach ($contentNodes as $contentNode) {
