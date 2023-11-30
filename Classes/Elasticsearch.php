@@ -2,6 +2,8 @@
 
 namespace Sandstorm\LightweightElasticsearch;
 
+use Flowpack\ElasticSearch\ContentRepositoryAdaptor\Service\IndexNameService;
+use Neos\ContentRepository\Core\DimensionSpace\DimensionSpacePoint;
 use Neos\ContentRepository\Core\Projection\ContentGraph\VisibilityConstraints;
 use Neos\Flow\Annotations as Flow;
 use Neos\ContentRepository\Core\ContentRepository;
@@ -112,9 +114,48 @@ class Elasticsearch
             $this->documentIndexer->indexSubgraph($subgraph, $workspace, $indexName, $this);
 
             // 3) Create/switch alias
-            $this->logger->info('Dimension space point: ' . $dimensionSpacePoint->toJson() . ' -> updating aliases');
+            $this->logger->info('Dimension space point: ' . $dimensionSpacePoint->toJson() . ' -> updating alias ' . $aliasName->value);
             $this->aliasManager->updateIndexAlias($aliasName, $indexName);
         }
+    }
+
+    /**
+     * Remove all non-used indices
+     */
+    public function removeObsoleteIndices(WorkspaceName $workspaceName)
+    {
+        $dimensionSpacePoints = $this->contentRepository->getVariationGraph()->getDimensionSpacePoints();
+        $allIndices = $this->apiClient->getAllIndexNames();
+
+        $indicesToBeRemoved = [];
+        foreach ($dimensionSpacePoints as $dimensionSpacePoint) {
+            assert($dimensionSpacePoint instanceof DimensionSpacePoint);
+            $this->logger->debug('Dimension Space Point: ' . $dimensionSpacePoint->toJson() . ' - hash: ' . $dimensionSpacePoint->hash);
+            $aliasName = AliasName::createForWorkspaceAndDimensionSpacePoint($this->settings->nodeIndexNamePrefix, $this->contentRepository->id, $workspaceName, $dimensionSpacePoint);
+            $currentlyLiveIndices = array_map(fn(IndexName $indexName) => $indexName->value, $this->aliasManager->loadIndicesForAlias($aliasName));
+
+            foreach ($allIndices as $indexName) {
+                if (str_starts_with($indexName->value, $aliasName->value) !== true) {
+                    // filter out all indices not starting with the alias-name, as they are unrelated to our application
+                    continue;
+                }
+
+                if (in_array($indexName->value, $currentlyLiveIndices, true)) {
+                    $this->logger->debug('  Skipping index ' . $indexName->value . ', because it is currently live');
+                    // skip the currently live index names from deletion
+                    continue;
+                }
+
+                $indicesToBeRemoved[] = $indexName;
+                $this->logger->info('  Will remove index ' . $indexName->value . '.');
+            }
+        }
+
+        foreach ($indicesToBeRemoved as $indexName) {
+            $this->apiClient->removeIndex($indexName);
+        }
+        $this->logger->info('Removed ' . count($indicesToBeRemoved) . ' indices.');
+
     }
 
     /**

@@ -60,43 +60,16 @@ class NodeIndexCommandController extends CommandController
      *
      * @return void
      */
-    public function cleanupCommand(): void
+    public function cleanupCommand(string $workspace = 'live', bool $verbose = false): void
     {
-        throw new \RuntimeException("TODO IMPLEMENT");
-
-
-
-
-        $removed = false;
-        $contentRepository = $this->contentRepositoryRegistry->get(\Neos\ContentRepository\Core\Factory\ContentRepositoryId::fromString('default'));
-        $dimensionSpacePoints = $contentRepository->getInterDimensionalVariationGraph()->getDimensionSpacePoints();
-        // TODO 9.0 migration: try to directly work with $dimensionSpacePoints, instead of converting them to the legacy dimension format
-
-        $combinations = array_map(fn(\Neos\ContentRepository\Core\DimensionSpace\DimensionSpacePoint $dimensionSpacePoint) => $dimensionSpacePoint->toLegacyDimensionArray(), iterator_to_array($dimensionSpacePoints));
-        foreach ($combinations as $dimensionsValues) {
-            try {
-                $this->nodeIndexer->setDimensions($dimensionsValues);
-                $removedIndices = $this->nodeIndexer->removeOldIndices();
-
-                foreach ($removedIndices as $indexToBeRemoved) {
-                    $removed = true;
-                    $this->logger->info('Removing old index ' . $indexToBeRemoved, LogEnvironment::fromMethodName(__METHOD__));
-                }
-            } catch (ApiException $exception) {
-                $exception->getResponse()->getBody()->rewind();
-                $response = json_decode($exception->getResponse()->getBody()->getContents(), false);
-                $message = sprintf('Nothing removed. ElasticSearch responded with status %s', $response->status);
-
-                if (isset($response->error->type)) {
-                    $this->logger->error(sprintf('%s, saying "%s: %s"', $message, $response->error->type, $response->error->reason), LogEnvironment::fromMethodName(__METHOD__));
-                } else {
-                    $this->logger->error(sprintf('%s, saying "%s"', $message, $response->error), LogEnvironment::fromMethodName(__METHOD__));
-                }
-            }
+        $consoleLogBackend = new ConsoleBackend();
+        if ($verbose) {
+            $consoleLogBackend->setSeverityThreshold(LOG_DEBUG);
         }
-        if ($removed === false) {
-            $this->logger->info('Nothing to remove.', LogEnvironment::fromMethodName(__METHOD__));
-        }
+        $logger = new Logger([$consoleLogBackend]);
+
+        $elasticsearch = $this->elasticsearchFactory->build(ContentRepositoryId::fromString('default'), $logger);
+        $elasticsearch->removeObsoleteIndices(WorkspaceName::fromString($workspace));
     }
 
     private function outputMemoryUsage(): void

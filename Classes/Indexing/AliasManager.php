@@ -35,4 +35,9 @@ class AliasManager
         $aliasActions->addAlias($aliasName, $indexName);
         $this->apiClient->updateAliases($aliasActions);
     }
+
+    public function loadIndicesForAlias(AliasName $aliasName): array
+    {
+        return $this->apiClient->indexNamesByAlias($aliasName);
+    }
 }

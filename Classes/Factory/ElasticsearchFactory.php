@@ -9,6 +9,7 @@ use Neos\Eel\CompilingEvaluator;
 use Neos\Flow\Annotations as Flow;
 use Psr\Log\LoggerInterface;
 use Sandstorm\LightweightElasticsearch\ElasticsearchApiClient\ApiCalls\IngestPipelineApiCalls;
+use Sandstorm\LightweightElasticsearch\ElasticsearchApiClient\ApiCalls\SystemApiCalls;
 use Sandstorm\LightweightElasticsearch\Indexing\AliasManager;
 use Sandstorm\LightweightElasticsearch\Indexing\BulkRequestSenderFactory;
 use Sandstorm\LightweightElasticsearch\Indexing\CustomIndexer;
@@ -54,7 +55,8 @@ class ElasticsearchFactory
             indexApi: new IndexApiCalls(),
             bulkApi: new BulkApiCalls(),
             ingestPipelineApi: new IngestPipelineApiCalls(),
-            searchApi: new SearchApiCalls()
+            searchApi: new SearchApiCalls(),
+            systemApi: new SystemApiCalls(),
         );
     }
 

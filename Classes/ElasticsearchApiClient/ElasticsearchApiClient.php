@@ -9,10 +9,12 @@ use Sandstorm\LightweightElasticsearch\ElasticsearchApiClient\ApiCalls\BulkApiCa
 use Sandstorm\LightweightElasticsearch\ElasticsearchApiClient\ApiCalls\IndexApiCalls;
 use Sandstorm\LightweightElasticsearch\ElasticsearchApiClient\ApiCalls\IngestPipelineApiCalls;
 use Sandstorm\LightweightElasticsearch\ElasticsearchApiClient\ApiCalls\SearchApiCalls;
+use Sandstorm\LightweightElasticsearch\ElasticsearchApiClient\ApiCalls\SystemApiCalls;
 use Sandstorm\LightweightElasticsearch\Settings\CreateIndexParameters;
 use Sandstorm\LightweightElasticsearch\SharedModel\AliasName;
 use Sandstorm\LightweightElasticsearch\SharedModel\ElasticsearchBaseUrl;
 use Sandstorm\LightweightElasticsearch\SharedModel\IndexName;
+use Sandstorm\LightweightElasticsearch\SharedModel\IndexNames;
 use Sandstorm\LightweightElasticsearch\SharedModel\MappingDefinition;
 
 /**
@@ -31,6 +33,7 @@ class ElasticsearchApiClient
         private readonly BulkApiCalls $bulkApi,
         private readonly IngestPipelineApiCalls $ingestPipelineApi,
         private readonly SearchApiCalls $searchApi,
+        private readonly SystemApiCalls $systemApi,
     ) {
     }
 
@@ -57,6 +60,14 @@ class ElasticsearchApiClient
     public function bulkIndex(IndexName $indexName, array $payloadLines): void
     {
         $this->bulkApi->bulkIndex($this->apiCaller, $this->baseUrl, $indexName, $payloadLines);
+    }
+
+    public function getAllIndexNames(): IndexNames
+    {
+        $stats = $this->systemApi->stats($this->apiCaller, $this->baseUrl);
+        $indexNames = array_keys($stats['indices']);
+        asort($indexNames);
+        return IndexNames::fromArray($indexNames);
     }
 
     /**
