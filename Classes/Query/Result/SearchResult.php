@@ -3,34 +3,32 @@
 
 namespace Sandstorm\LightweightElasticsearch\Query\Result;
 
-use Neos\ContentRepository\Domain\Model\NodeInterface;
+use Neos\ContentRepository\Core\Projection\ContentGraph\Node;
+use Neos\ContentRepositoryRegistry\ContentRepositoryRegistry;
 use Neos\Eel\ProtectedContextAwareInterface;
 use Neos\Flow\Annotations as Flow;
+use ReturnTypeWillChange;
 use Sandstorm\LightweightElasticsearch\Query\SearchRequestBuilder;
 
 /**
  * Wrapper for all search results
- *
- * @Flow\Proxy(false)
  */
+#[Flow\Proxy(false)]
 class SearchResult implements \IteratorAggregate, ProtectedContextAwareInterface, \Countable
 {
-
-    private array $response;
-    private bool $isError;
-    private ?NodeInterface $contextNode;
 
     /**
      * DO NOT CALL THIS DIRECTLY; only to be called from {@see SearchRequestBuilder::execute()}
      *
      * @param array $response
-     * @param NodeInterface $contextNode
+     * @param Node $contextNode
+     * @param ContentRepositoryRegistry $contentRepositoryRegistry
      * @return static
      * @internal
      */
-    public static function fromElasticsearchJsonResponse(array $response, NodeInterface $contextNode): self
+    public static function fromElasticsearchJsonResponse(array $response, Node $contextNode, ContentRepositoryRegistry $contentRepositoryRegistry): self
     {
-        return new SearchResult($response, false, $contextNode);
+        return new self($response, false, $contextNode, $contentRepositoryRegistry);
     }
 
     /**
@@ -41,14 +39,16 @@ class SearchResult implements \IteratorAggregate, ProtectedContextAwareInterface
      */
     public static function error(): self
     {
-        return new SearchResult([], true);
+        return new self([], true);
     }
 
-    private function __construct(array $response, bool $isError, NodeInterface $contextNode = null)
-    {
-        $this->response = $response;
-        $this->isError = $isError;
-        $this->contextNode = $contextNode;
+    private function __construct(
+        private readonly array $response,
+        private readonly bool $isError,
+        private readonly Node|null $contextNode = null,
+        private readonly ContentRepositoryRegistry|null $contentRepositoryRegistry = null,
+
+    ) {
     }
 
     public function isError(): bool
@@ -60,7 +60,7 @@ class SearchResult implements \IteratorAggregate, ProtectedContextAwareInterface
     {
         if (isset($this->response['hits']['hits'])) {
             foreach ($this->response['hits']['hits'] as $hit) {
-                yield SearchResultDocument::fromElasticsearchJsonResponse($hit, $this->contextNode);
+                yield SearchResultDocument::fromElasticsearchJsonResponse($hit, $this->contextNode, $this->contentRepositoryRegistry);
             }
         }
     }
@@ -74,7 +74,7 @@ class SearchResult implements \IteratorAggregate, ProtectedContextAwareInterface
 
     }
 
-    public function count()
+    public function count(): int
     {
         if (isset($this->response['hits']['hits'])) {
             return count($this->response['hits']['hits']);
@@ -82,7 +82,7 @@ class SearchResult implements \IteratorAggregate, ProtectedContextAwareInterface
         return 0;
     }
 
-    public function allowsCallOfMethod($methodName)
+    public function allowsCallOfMethod($methodName): bool
     {
         return true;
     }

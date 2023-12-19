@@ -3,67 +3,55 @@ declare(strict_types=1);
 
 namespace Sandstorm\LightweightElasticsearch\Query;
 
-use Neos\ContentRepository\Domain\Model\NodeInterface;
-use Neos\Flow\Annotations as Flow;
-use Flowpack\ElasticSearch\ContentRepositoryAdaptor\ElasticSearchClient;
-use Flowpack\ElasticSearch\Transfer\Exception\ApiException;
+use Neos\ContentRepository\Core\Projection\ContentGraph\Node;
+use Neos\ContentRepository\Core\SharedModel\Workspace\WorkspaceName;
+use Neos\ContentRepositoryRegistry\ContentRepositoryRegistry;
 use Neos\Eel\ProtectedContextAwareInterface;
+use Neos\Flow\Annotations as Flow;
 use Neos\Flow\Log\ThrowableStorageInterface;
 use Neos\Flow\Log\Utility\LogEnvironment;
 use Psr\Log\LoggerInterface;
+use Sandstorm\LightweightElasticsearch\Elasticsearch;
+use Sandstorm\LightweightElasticsearch\SharedModel\AliasName;
 
 
 abstract class AbstractSearchRequestBuilder implements ProtectedContextAwareInterface
 {
+    #[Flow\Inject]
+    protected ThrowableStorageInterface $throwableStorage;
 
-    /**
-     * @Flow\Inject
-     * @var ElasticSearchClient
-     */
-    protected $elasticSearchClient;
+    #[Flow\Inject]
+    protected LoggerInterface $logger;
 
-    /**
-     * @Flow\Inject
-     * @var ThrowableStorageInterface
-     */
-    protected $throwableStorage;
+    protected bool $logThisQuery = false;
 
-    /**
-     * @Flow\Inject
-     * @var LoggerInterface
-     */
-    protected $logger;
+    protected string $logMessage;
+    private WorkspaceName $workspaceName;
 
-    private array $additionalIndices;
+    public function __construct(
+        protected readonly ContentRepositoryRegistry $contentRepositoryRegistry,
+        protected readonly Elasticsearch $elasticsearch,
+        protected readonly Node|null $contextNode = null,
+        protected readonly array $additionalAliases = [],
 
-    /**
-     * @var boolean
-     */
-    protected $logThisQuery = false;
-
-    /**
-     * @var string
-     */
-    protected $logMessage;
-
-    /**
-     * @var NodeInterface|null
-     */
-    protected ?NodeInterface $contextNode;
-
-    public function __construct(NodeInterface $contextNode = null, array $additionalIndices = [])
-    {
-        $this->contextNode = $contextNode;
-        $this->additionalIndices = $additionalIndices;
+    ) {
+        $contentRepository = $this->contentRepositoryRegistry->get($this->contextNode->subgraphIdentity->contentRepositoryId);
+        $workspace = $contentRepository->getWorkspaceFinder()->findOneByCurrentContentStreamId($this->contextNode->subgraphIdentity->contentStreamId);
+        $this->workspaceName = $workspace->workspaceName;
+        foreach ($this->additionalAliases as $alias) {
+            if (!$alias instanceof AliasName) {
+                throw new \RuntimeException('alias is no AliasName, but ' . get_class($alias), 1693488463);
+            }
+        }
     }
 
     /**
      * Log the current request to the Elasticsearch log for debugging after it has been executed.
      *
-     * @param string $message an optional message to identify the log entry
+     * @param string|null $message an optional message to identify the log entry
      * @api
      */
-    public function log($message = null): self
+    public function log(string $message = null): self
     {
         $this->logThisQuery = true;
         $this->logMessage = $message;
@@ -75,36 +63,36 @@ abstract class AbstractSearchRequestBuilder implements ProtectedContextAwareInte
      * Execute the query and return the SearchResult object as result.
      *
      * You can call this method multiple times; and the request is only executed at the first time; and cached
-     * for later use.
-     *
-     * @throws \Flowpack\ElasticSearch\Exception
-     * @throws \Neos\Flow\Http\Exception
+     * for later use
      */
     protected function executeInternal(array $request): array
     {
         try {
             $timeBefore = microtime(true);
 
-            $indexNames = $this->additionalIndices;
+            $aliasNames = $this->additionalAliases;
             if ($this->contextNode !== null) {
-                $this->elasticSearchClient->setContextNode($this->contextNode);
-                $indexNames[] = $this->elasticSearchClient->getIndexName();
+                $aliasNames[] = AliasName::createForWorkspaceAndDimensionSpacePoint(
+                    $this->elasticsearch->settings->nodeIndexNamePrefix,
+                    $this->contextNode->subgraphIdentity->contentRepositoryId,
+                    $this->workspaceName,
+                    $this->contextNode->subgraphIdentity->dimensionSpacePoint,
+                );
             }
 
-            $response = $this->elasticSearchClient->request('GET', '/' . implode(',', $indexNames) . '/_search', [], $request);
+            $jsonResponse = $this->elasticsearch->apiClient->search($aliasNames, $request);
             $timeAfterwards = microtime(true);
 
-            $jsonResponse = $response->getTreatedContent();
-            $this->logThisQuery && $this->logger->debug(sprintf('Query Log (%s): Indexname: %s %s -- execution time: %s ms -- Number of results returned: %s -- Total Results: %s', $this->logMessage, implode(',', $indexNames), json_encode($request), (($timeAfterwards - $timeBefore) * 1000), count($jsonResponse['hits']['hits']), $jsonResponse['hits']['total']['value']), LogEnvironment::fromMethodName(__METHOD__));
+            $this->logThisQuery && $this->logger->debug(sprintf('Query Log (%s): Indexname: %s %s -- execution time: %s ms -- Number of results returned: %s -- Total Results: %s', $this->logMessage, implode(',', $aliasNames), json_encode($request), (($timeAfterwards - $timeBefore) * 1000), count($jsonResponse['hits']['hits']), $jsonResponse['hits']['total']['value']), LogEnvironment::fromMethodName(__METHOD__));
             return $jsonResponse;
-        } catch (ApiException $exception) {
+        } catch (\RuntimeException $exception) {
             $message = $this->throwableStorage->logThrowable($exception);
             $this->logger->error(sprintf('Request failed with %s', $message), LogEnvironment::fromMethodName(__METHOD__));
             throw $exception;
         }
     }
 
-    public function allowsCallOfMethod($methodName)
+    public function allowsCallOfMethod($methodName): bool
     {
         return true;
     }

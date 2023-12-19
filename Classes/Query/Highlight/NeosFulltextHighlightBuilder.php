@@ -6,9 +6,7 @@ namespace Sandstorm\LightweightElasticsearch\Query\Highlight;
 use Neos\Eel\ProtectedContextAwareInterface;
 use Neos\Flow\Annotations as Flow;
 
-/**
- * @Flow\Proxy(false)
- */
+#[Flow\Proxy(false)]
 final class NeosFulltextHighlightBuilder implements HighlightBuilderInterface, ProtectedContextAwareInterface
 {
     private int $fragmentSize;
@@ -57,7 +55,7 @@ final class NeosFulltextHighlightBuilder implements HighlightBuilderInterface, P
         return $highlightRequestPart;
     }
 
-    public function allowsCallOfMethod($methodName)
+    public function allowsCallOfMethod($methodName): bool
     {
         return true;
     }

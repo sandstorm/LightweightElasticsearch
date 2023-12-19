@@ -3,27 +3,30 @@
 
 namespace Sandstorm\LightweightElasticsearch\Query\Query;
 
+use Neos\ContentRepository\Core\Projection\ContentGraph\Node;
+use Neos\ContentRepository\Core\SharedModel\Workspace\WorkspaceName;
+use Neos\ContentRepositoryRegistry\ContentRepositoryRegistry;
 use Neos\Eel\ProtectedContextAwareInterface;
 use Neos\Flow\Annotations as Flow;
-use Neos\ContentRepository\Domain\Model\NodeInterface;
 
 /**
  * Do a fulltext search in Neos nodes, by searching neos_fulltext appropriately.
  *
  * Also allows to further restrict the result set by calling filter().
- *
- * @Flow\Proxy(false)
  */
+#[Flow\Proxy(false)]
 class NeosFulltextQueryBuilder implements SearchQueryBuilderInterface, ProtectedContextAwareInterface
 {
     protected BooleanQueryBuilder $boolQuery;
 
-    public static function create(NodeInterface $contextNode): self
+    public static function create(Node $contextNode, ContentRepositoryRegistry $contentRepositoryRegistry): self
     {
-        return new self($contextNode);
+        $contentRepository = $contentRepositoryRegistry->get($contextNode->subgraphIdentity->contentRepositoryId);
+        $workspace = $contentRepository->getWorkspaceFinder()->findOneByCurrentContentStreamId($contextNode->subgraphIdentity->contentStreamId);
+        return new self($contextNode, $workspace?->workspaceName);
     }
 
-    private function __construct(NodeInterface $contextNode)
+    private function __construct(Node $contextNode, ?WorkspaceName $workspaceName)
     {
         $this->boolQuery = BooleanQueryBuilder::create()
             // on indexing, the neos_parent_path is tokenized to contain ALL parent path parts,
@@ -32,12 +35,12 @@ class NeosFulltextQueryBuilder implements SearchQueryBuilderInterface, Protected
             // another term filter against the path allows the context node itself to be found
             ->filter(
                 BooleanQueryBuilder::create()
-                    ->should(TermQueryBuilder::create('neos_parent_path', $contextNode->getPath()))
-                    ->should(TermQueryBuilder::create('neos_path', $contextNode->getPath()))
+                    ->should(TermQueryBuilder::create('neos_ancestor_ids', $contextNode->nodeAggregateId->value))
+                    ->should(TermQueryBuilder::create('neos_nodeaggregateid', $contextNode->nodeAggregateId->value))
             )
             ->filter(
             // http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-dsl-terms-filter.html
-                TermsQueryBuilder::create('neos_workspace', array_unique(['live', $contextNode->getContext()->getWorkspace()->getName()]))
+                TermsQueryBuilder::create('neos_workspace', [$workspaceName->value])
             );
     }
 
@@ -81,7 +84,7 @@ class NeosFulltextQueryBuilder implements SearchQueryBuilderInterface, Protected
         return $this->boolQuery->buildQuery();
     }
 
-    public function allowsCallOfMethod($methodName)
+    public function allowsCallOfMethod($methodName): bool
     {
         return true;
     }

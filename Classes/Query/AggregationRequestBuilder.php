@@ -4,7 +4,6 @@ declare(strict_types=1);
 namespace Sandstorm\LightweightElasticsearch\Query;
 
 use Neos\Flow\Annotations as Flow;
-use Flowpack\ElasticSearch\Transfer\Exception\ApiException;
 use Sandstorm\LightweightElasticsearch\Query\Aggregation\AggregationBuilderInterface;
 use Sandstorm\LightweightElasticsearch\Query\Aggregation\AggregationResultInterface;
 use Sandstorm\LightweightElasticsearch\Query\Aggregation\QueryErrorAggregationResult;
@@ -16,11 +15,8 @@ use Sandstorm\LightweightElasticsearch\Query\Query\SearchQueryBuilderInterface;
  */
 class AggregationRequestBuilder extends AbstractSearchRequestBuilder
 {
-    /**
-     * @Flow\InjectConfiguration("handleElasticsearchExceptions")
-     * @var string
-     */
-    protected $handleElasticsearchExceptions;
+    #[Flow\InjectConfiguration(path: 'handleElasticsearchExceptions')]
+    protected string $handleElasticsearchExceptions;
 
     /**
      * @var AggregationBuilderInterface
@@ -93,9 +89,6 @@ class AggregationRequestBuilder extends AbstractSearchRequestBuilder
      *
      * You can call this method multiple times; and the request is only executed at the first time; and cached
      * for later use.
-     *
-     * @throws \Flowpack\ElasticSearch\Exception
-     * @throws \Neos\Flow\Http\Exception
      */
     public function execute(): AggregationResultInterface
     {
@@ -106,7 +99,7 @@ class AggregationRequestBuilder extends AbstractSearchRequestBuilder
                 $request = $this->prepareRequest();
                 $jsonResponse = $this->executeInternal($request);
                 $this->aggregationResult = $this->aggregationBuilder->bindResponse($jsonResponse['aggregations'][self::AGGREGATION_NAME]);
-            } catch (ApiException $exception) {
+            } catch (\RuntimeException $exception) {
                 if ($this->handleElasticsearchExceptions === 'throw') {
                     throw $exception;
                 }
@@ -143,7 +136,7 @@ class AggregationRequestBuilder extends AbstractSearchRequestBuilder
         return $this->prepareRequest();
     }
 
-    public function allowsCallOfMethod($methodName)
+    public function allowsCallOfMethod($methodName): bool
     {
         return true;
     }

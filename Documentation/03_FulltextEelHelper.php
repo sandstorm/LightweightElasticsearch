@@ -17,13 +17,13 @@ class MyQueries implements ProtectedContextAwareInterface
         return BooleanQueryBuilder::create()
             ->filter(TermQueryBuilder::create('index_discriminator', 'faq'))
             ->must(
-                SimpleQueryStringBuilder::create($query ?? '')->fields([
+                SimpleQueryStringBuilder::create($query)->fields([
                     'faqEntryTitle^5',
                 ])
             );
     }
 
-    public function allowsCallOfMethod($methodName)
+    public function allowsCallOfMethod($methodName): bool
     {
         return true;
     }

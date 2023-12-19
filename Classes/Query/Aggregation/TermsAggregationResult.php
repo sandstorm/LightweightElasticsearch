@@ -20,9 +20,8 @@ use Neos\Flow\Annotations as Flow;
  *     `
  * }
  * ```
- *
- * @Flow\Proxy(false)
  */
+#[Flow\Proxy(false)]
 class TermsAggregationResult implements AggregationResultInterface, ProtectedContextAwareInterface
 {
     private array $aggregationResponse;
@@ -51,7 +50,7 @@ class TermsAggregationResult implements AggregationResultInterface, ProtectedCon
         return $this->termsAggregationBuilder->getSelectedValue();
     }
 
-    public function allowsCallOfMethod($methodName)
+    public function allowsCallOfMethod($methodName): bool
     {
         return true;
     }
