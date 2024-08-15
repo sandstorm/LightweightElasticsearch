@@ -11,6 +11,9 @@ final class NeosFulltextHighlightBuilder implements HighlightBuilderInterface, P
 {
     private int $fragmentSize;
     private ?int $fragmentCount;
+    /**
+     * @var array<mixed>
+     */
     private array $extraHighlightFields = [];
 
     public static function create(int $fragmentSize, int $fragmentCount = null): self
@@ -36,6 +39,10 @@ final class NeosFulltextHighlightBuilder implements HighlightBuilderInterface, P
         return $this;
     }
 
+    /**
+     * @param array<mixed> $extraFields
+     * @return array<mixed>
+     */
     public function buildHighlightRequestPart(array $extraFields = []): array
     {
         $highlightRequestPart = [

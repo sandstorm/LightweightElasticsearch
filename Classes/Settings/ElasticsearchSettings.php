@@ -12,24 +12,28 @@ use Sandstorm\LightweightElasticsearch\SharedModel\IndexNamePrefix;
  * @internal
  */
 #[Flow\Proxy(false)]
-class ElasticsearchSettings
+readonly class ElasticsearchSettings
 {
-
-
+    /**
+     * @param array<mixed> $defaultContext
+     */
     private function __construct(
-        public readonly IndexNamePrefix $nodeIndexNamePrefix,
-        public readonly int $transferConnectionTimeout,
-        public readonly ElasticsearchBaseUrl $baseUrl,
-        public readonly bool $transferSslVerifyPeer,
-        public readonly bool $transferSslVerifyHost,
-        public readonly DefaultConfigurationPerType $defaultConfigurationPerType,
-        public readonly array $defaultContext, // TODO: maybe rename to "indexingEelContext"?
-        public readonly int $indexingBatchSizeElements,
-        public readonly int $indexingBatchSizeOctets,
-        public readonly int $assetMaximumFileSize,
+        public IndexNamePrefix $nodeIndexNamePrefix,
+        public int $transferConnectionTimeout,
+        public ElasticsearchBaseUrl $baseUrl,
+        public bool $transferSslVerifyPeer,
+        public bool $transferSslVerifyHost,
+        public DefaultConfigurationPerType $defaultConfigurationPerType,
+        public array $defaultContext, // TODO: maybe rename to "indexingEelContext"?
+        public int $indexingBatchSizeElements,
+        public int $indexingBatchSizeOctets,
+        public int $assetMaximumFileSize,
     ) {
     }
 
+    /**
+     * @param array<string,mixed> $settings
+     */
     public static function fromArray(array $settings): self
     {
         return new self(

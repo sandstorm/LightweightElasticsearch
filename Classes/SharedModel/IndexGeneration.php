@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Sandstorm\LightweightElasticsearch\SharedModel;
 
 /**
@@ -28,7 +30,7 @@ final class IndexGeneration implements \JsonSerializable
 
     public static function createFromCurrentTime(): self
     {
-        return new self(time());
+        return new self((string)time());
     }
 
 

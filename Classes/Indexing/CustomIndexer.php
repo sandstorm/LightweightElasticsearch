@@ -61,7 +61,7 @@ class CustomIndexer
     /**
      * Create a new index with the given Elasticsearch mapping.
      *
-     * @param array $fullMapping
+     * @param array<mixed> $fullMapping
      */
     public function createIndexWithMapping(array $fullMapping): void
     {
@@ -82,7 +82,7 @@ class CustomIndexer
     /**
      * Index a document, optionally also specifying the document ID.
      *
-     * @param array $documentProperties
+     * @param array<mixed> $documentProperties
      * @param string|null $documentId
      */
     public function index(array $documentProperties, ?string $documentId = null): void

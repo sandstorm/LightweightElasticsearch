@@ -9,7 +9,7 @@ use Neos\Flow\Annotations as Flow;
 class SimpleQueryStringBuilder implements SearchQueryBuilderInterface
 {
     /**
-     * @var array[]
+     * @var array<mixed>
      */
     private array $query = [
         'simple_query_string' => []
@@ -25,12 +25,18 @@ class SimpleQueryStringBuilder implements SearchQueryBuilderInterface
         $this->query['simple_query_string']['query'] = $queryString;
     }
 
+    /**
+     * @param array<mixed> $fields
+     */
     public function fields(array $fields): self
     {
         $this->query['simple_query_string']['fields'] = $fields;
         return $this;
     }
 
+    /**
+     * @return array<mixed>
+     */
     public function buildQuery(): array
     {
         return $this->query;

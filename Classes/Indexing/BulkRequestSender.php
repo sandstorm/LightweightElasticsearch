@@ -45,6 +45,9 @@ class BulkRequestSender
     ) {
     }
 
+    /**
+     * @param array<mixed> $documentData
+     */
     public function indexDocument(array $documentData, string $documentId = null): void
     {
         if ($documentId === null) {
@@ -69,10 +72,14 @@ class BulkRequestSender
         }
     }
 
+    /**
+     * @param array<mixed> $headerLine
+     * @param array<mixed> $bodyLine
+     */
     private function addPayloadLine(array $headerLine, array $bodyLine): self
     {
-        $encodedHeader = json_encode($headerLine);
-        $encodedBody = json_encode($bodyLine);
+        $encodedHeader = json_encode($headerLine, JSON_THROW_ON_ERROR);
+        $encodedBody = json_encode($bodyLine, JSON_THROW_ON_ERROR);
 
         $this->payloadLines[] = $encodedHeader;
         $this->payloadLines[] = $encodedBody;

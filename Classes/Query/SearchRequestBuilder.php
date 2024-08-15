@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Sandstorm\LightweightElasticsearch\Query;
 
+use Neos\ContentRepositoryRegistry\ContentRepositoryRegistry;
 use Neos\Flow\Annotations as Flow;
 use Sandstorm\LightweightElasticsearch\Query\Highlight\HighlightBuilderInterface;
 use Sandstorm\LightweightElasticsearch\Query\Query\SearchQueryBuilderInterface;
@@ -14,6 +15,9 @@ class SearchRequestBuilder extends AbstractSearchRequestBuilder
     #[Flow\InjectConfiguration(path: 'handleElasticsearchExceptions')]
     protected string $handleElasticsearchExceptions;
 
+    #[Flow\Inject]
+    protected ContentRepositoryRegistry $contentRepositoryRegistry;
+
     /**
      * Cached search result
      *
@@ -21,6 +25,9 @@ class SearchRequestBuilder extends AbstractSearchRequestBuilder
      */
     private ?SearchResult $searchResult = null;
 
+    /**
+     * @var array<string,mixed>
+     */
     protected array $request = [];
 
     public function query(SearchQueryBuilderInterface $query): self
@@ -115,7 +122,7 @@ class SearchRequestBuilder extends AbstractSearchRequestBuilder
     /**
      * Returns the full request as it is sent to Elasticsearch; useful for debugging purposes.
      *
-     * @return array
+     * @return array<string,mixed>
      */
     public function requestForDebugging(): array
     {

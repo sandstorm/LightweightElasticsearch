@@ -10,14 +10,19 @@ use Sandstorm\LightweightElasticsearch\SharedModel\MappingDefinition;
  *
  * @internal - only used as implementation detail in {@see ElasticsearchSettings}.
  */
-final class DefaultConfigurationPerType
+final readonly class DefaultConfigurationPerType
 {
-
+    /**
+     * @param array<string,mixed> $configuration
+     */
     private function __construct(
-        private readonly array $configuration
+        private array $configuration
     ) {
     }
 
+    /**
+     * @param array<string,mixed> $value
+     */
     public static function fromArray(array $value): self
     {
         return new self($value);

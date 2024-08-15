@@ -36,6 +36,9 @@ class AliasManager
         $this->apiClient->updateAliases($aliasActions);
     }
 
+    /**
+     * @return array<mixed>
+     */
     public function loadIndicesForAlias(AliasName $aliasName): array
     {
         return $this->apiClient->indexNamesByAlias($aliasName);

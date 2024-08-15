@@ -13,7 +13,7 @@ namespace Sandstorm\LightweightElasticsearch\Command;
  * source code.
  */
 
-use Neos\ContentRepository\Core\Factory\ContentRepositoryId;
+use Neos\ContentRepository\Core\SharedModel\ContentRepository\ContentRepositoryId;
 use Neos\ContentRepository\Core\SharedModel\Workspace\WorkspaceName;
 use Neos\Flow\Annotations as Flow;
 use Neos\Flow\Cli\CommandController;

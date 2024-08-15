@@ -1,47 +1,55 @@
 <?php
 
+declare(strict_types=1);
 
 namespace Sandstorm\LightweightElasticsearch\Query\Result;
-
 
 use Neos\ContentRepository\Core\Projection\ContentGraph\Node;
 use Neos\ContentRepository\Core\SharedModel\Node\NodeAggregateId;
 use Neos\ContentRepositoryRegistry\ContentRepositoryRegistry;
 use Neos\Eel\ProtectedContextAwareInterface;
 
-class SearchResultDocument implements ProtectedContextAwareInterface
+readonly class SearchResultDocument implements ProtectedContextAwareInterface
 {
+    /**
+     * @param array<mixed> $hit
+     */
     protected function __construct(
-        private readonly array $hit,
-        private readonly Node|null $contextNode = null,
-        private readonly ContentRepositoryRegistry|null $contentRepositoryRegistry = null
-    )
-    {
+        private array $hit,
+        private Node|null $contextNode = null,
+        private ContentRepositoryRegistry|null $contentRepositoryRegistry = null
+    ) {
     }
 
     public static function fromElasticsearchJsonResponse(array $hit, Node $contextNode = null, ContentRepositoryRegistry $contentRepositoryRegistry = null): self
     {
-        return new static($hit, $contextNode, $contentRepositoryRegistry);
+        return new self($hit, $contextNode, $contentRepositoryRegistry);
     }
 
     public function loadNode(): ?Node
     {
         $nodeAggregateId = NodeAggregateId::fromString($this->hit['_source']['neos_nodeaggregateid']);
 
-        $subgraph = $this->contentRepositoryRegistry->subgraphForNode($this->contextNode);
-        return $subgraph->findNodeById($nodeAggregateId);
+        $subgraph = $this->contentRepositoryRegistry?->subgraphForNode($this->contextNode);
+        return $subgraph?->findNodeById($nodeAggregateId);
     }
 
+    /**
+     * @return array<mixed>
+     */
     public function getFullSearchHit(): array
     {
         return $this->hit;
     }
 
-    public function property(string $key)
+    public function property(string $key): mixed
     {
         return $this->hit['_source'][$key] ?? null;
     }
 
+    /**
+     * @return array<mixed>
+     */
     public function getProperties(): array
     {
         return $this->hit['_source'] ?? [];

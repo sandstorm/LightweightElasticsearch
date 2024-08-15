@@ -9,9 +9,12 @@ use Sandstorm\LightweightElasticsearch\SharedModel\IndexName;
 #[Flow\Proxy(false)]
 class AliasActionsBuilder implements \JsonSerializable
 {
+    /**
+     * @var array<string,mixed>
+     */
     private array $aliasActions = [];
 
-    public function removeAlias(AliasName $aliasName, IndexName $indexName)
+    public function removeAlias(AliasName $aliasName, IndexName $indexName): void
     {
         $this->aliasActions[] = [
             'remove' => [
@@ -21,7 +24,7 @@ class AliasActionsBuilder implements \JsonSerializable
         ];
     }
 
-    public function addAlias(AliasName $aliasName, IndexName $indexName)
+    public function addAlias(AliasName $aliasName, IndexName $indexName): void
     {
         $this->aliasActions[] = [
             'add' => [
@@ -31,6 +34,9 @@ class AliasActionsBuilder implements \JsonSerializable
         ];
     }
 
+    /**
+     * @return array<mixed>
+     */
     public function jsonSerialize(): array
     {
         return $this->aliasActions;

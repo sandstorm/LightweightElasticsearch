@@ -2,7 +2,6 @@
 
 namespace Sandstorm\LightweightElasticsearch;
 
-use Flowpack\ElasticSearch\ContentRepositoryAdaptor\Service\IndexNameService;
 use Neos\ContentRepository\Core\DimensionSpace\DimensionSpacePoint;
 use Neos\ContentRepository\Core\Projection\ContentGraph\VisibilityConstraints;
 use Neos\Flow\Annotations as Flow;
@@ -85,12 +84,6 @@ class Elasticsearch
      */
     public function indexWorkspace(WorkspaceName $workspaceName): void
     {
-        $workspace = $this->contentRepository->getWorkspaceFinder()->findOneByName($workspaceName);
-        if ($workspace === null) {
-            throw new \InvalidArgumentException(
-                'Workspace "' . $workspaceName->value . '" not found.', 1693391297
-            );
-        }
         $dimensionSpacePoints = $this->contentRepository->getVariationGraph()->getDimensionSpacePoints();
 
         foreach ($dimensionSpacePoints as $dimensionSpacePoint) {
@@ -110,8 +103,8 @@ class Elasticsearch
 
             // 2) Index nodes
             $this->logger->info('Dimension space point: ' . $dimensionSpacePoint->toJson() . ' -> Indexing nodes into: ' . $indexName->value);
-            $subgraph = $this->contentRepository->getContentGraph()->getSubgraph($workspace->currentContentStreamId, $dimensionSpacePoint, VisibilityConstraints::frontend());
-            $this->documentIndexer->indexSubgraph($subgraph, $workspace, $indexName, $this);
+            $subgraph = $this->contentRepository->getContentGraph($workspaceName)->getSubgraph($dimensionSpacePoint, VisibilityConstraints::frontend());
+            $this->documentIndexer->indexSubgraph($subgraph, $workspaceName, $indexName, $this);
 
             // 3) Create/switch alias
             $this->logger->info('Dimension space point: ' . $dimensionSpacePoint->toJson() . ' -> updating alias ' . $aliasName->value);
@@ -122,7 +115,7 @@ class Elasticsearch
     /**
      * Remove all non-used indices
      */
-    public function removeObsoleteIndices(WorkspaceName $workspaceName)
+    public function removeObsoleteIndices(WorkspaceName $workspaceName): void
     {
         $dimensionSpacePoints = $this->contentRepository->getVariationGraph()->getDimensionSpacePoints();
         $allIndices = $this->apiClient->getAllIndexNames();

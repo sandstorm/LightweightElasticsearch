@@ -17,7 +17,7 @@ class IndexApiCalls
         return $response->getStatusCode() === 200;
     }
 
-    public function removeIndex(ApiCaller $apiCaller, ElasticsearchBaseUrl $baseUrl, IndexName $indexName)
+    public function removeIndex(ApiCaller $apiCaller, ElasticsearchBaseUrl $baseUrl, IndexName $indexName): void
     {
         $apiCaller->request('DELETE', $baseUrl->withPathSegment($indexName->value));
     }
@@ -25,17 +25,17 @@ class IndexApiCalls
     /**
      * https://www.elastic.co/guide/en/elasticsearch/reference/current/indices-create-index.html
      */
-    public function createIndex(ApiCaller $apiCaller, ElasticsearchBaseUrl $baseUrl, IndexName $indexName, CreateIndexParameters $createIndexParameters)
+    public function createIndex(ApiCaller $apiCaller, ElasticsearchBaseUrl $baseUrl, IndexName $indexName, CreateIndexParameters $createIndexParameters): void
     {
-        $response = $apiCaller->request('PUT', $baseUrl->withPathSegment($indexName->value), json_encode($createIndexParameters));
+        $response = $apiCaller->request('PUT', $baseUrl->withPathSegment($indexName->value), json_encode($createIndexParameters, JSON_THROW_ON_ERROR));
         if ($response->getStatusCode() !== 200) {
             throw new \RuntimeException('Error creating index: ' . $response->getBody()->getContents(), 1693401613);
         }
     }
 
-    public function updateMapping(ApiCaller $apiCaller, ElasticsearchBaseUrl $baseUrl, IndexName $indexName, MappingDefinition $mappingDefinition)
+    public function updateMapping(ApiCaller $apiCaller, ElasticsearchBaseUrl $baseUrl, IndexName $indexName, MappingDefinition $mappingDefinition): void
     {
-        $response = $apiCaller->request('PUT', $baseUrl->withPathSegment($indexName->value . '/_mapping'), json_encode($mappingDefinition));
+        $response = $apiCaller->request('PUT', $baseUrl->withPathSegment($indexName->value . '/_mapping'), json_encode($mappingDefinition, JSON_THROW_ON_ERROR));
         if ($response->getStatusCode() !== 200) {
             throw new \RuntimeException('Error updating mapping: ' . $response->getBody()->getContents(), 1693401631);
         }

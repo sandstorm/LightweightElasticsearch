@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 
 namespace Sandstorm\LightweightElasticsearch\Query\Result;
 
@@ -7,26 +8,23 @@ use Neos\ContentRepository\Core\Projection\ContentGraph\Node;
 use Neos\ContentRepositoryRegistry\ContentRepositoryRegistry;
 use Neos\Eel\ProtectedContextAwareInterface;
 use Neos\Flow\Annotations as Flow;
-use ReturnTypeWillChange;
 use Sandstorm\LightweightElasticsearch\Query\SearchRequestBuilder;
 
 /**
  * Wrapper for all search results
+ *
+ * @implements \IteratorAggregate<SearchResultDocument>
  */
 #[Flow\Proxy(false)]
 class SearchResult implements \IteratorAggregate, ProtectedContextAwareInterface, \Countable
 {
-
     /**
      * DO NOT CALL THIS DIRECTLY; only to be called from {@see SearchRequestBuilder::execute()}
      *
-     * @param array $response
-     * @param Node $contextNode
-     * @param ContentRepositoryRegistry $contentRepositoryRegistry
-     * @return static
+     * @param array<mixed> $response
      * @internal
      */
-    public static function fromElasticsearchJsonResponse(array $response, Node $contextNode, ContentRepositoryRegistry $contentRepositoryRegistry): self
+    public static function fromElasticsearchJsonResponse(array $response, ?Node $contextNode, ContentRepositoryRegistry $contentRepositoryRegistry): self
     {
         return new self($response, false, $contextNode, $contentRepositoryRegistry);
     }
@@ -34,7 +32,6 @@ class SearchResult implements \IteratorAggregate, ProtectedContextAwareInterface
     /**
      * DO NOT CALL THIS DIRECTLY; only to be called from {@see SearchRequestBuilder::execute()}
      *
-     * @return static
      * @internal
      */
     public static function error(): self
@@ -42,12 +39,14 @@ class SearchResult implements \IteratorAggregate, ProtectedContextAwareInterface
         return new self([], true);
     }
 
+    /**
+     * @param array<mixed> $response
+     */
     private function __construct(
         private readonly array $response,
         private readonly bool $isError,
         private readonly Node|null $contextNode = null,
         private readonly ContentRepositoryRegistry|null $contentRepositoryRegistry = null,
-
     ) {
     }
 

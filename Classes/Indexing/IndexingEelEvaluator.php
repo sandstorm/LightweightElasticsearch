@@ -25,6 +25,7 @@ class IndexingEelEvaluator
 
     /**
      * the default context variables available inside Eel (cached)
+     * @var array<mixed>|null
      */
     protected ?array $defaultContextVariables = null;
 
@@ -38,7 +39,7 @@ class IndexingEelEvaluator
         $extractedFulltext = $this->evaluate($propertySearchSettings->fulltextExtractorEelExpression, $node, $propertySearchSettings->propertyName, $elasticsearch);
 
         if (!is_array($extractedFulltext)) {
-            throw new \RuntimeException('The fulltext index for property "' . $propertySearchSettings->propertyName . '" of node "' . $node->nodeAggregateId->value . '" could not be retrieved; the Eel expression "' . $propertySearchSettings->fulltextExtractorEelExpression . '" is no valid fulltext extraction expression.', 1693468443);
+            throw new \RuntimeException('The fulltext index for property "' . $propertySearchSettings->propertyName . '" of node "' . $node->aggregateId->value . '" could not be retrieved; the Eel expression "' . $propertySearchSettings->fulltextExtractorEelExpression . '" is no valid fulltext extraction expression.', 1693468443);
         }
 
         foreach ($extractedFulltext as $bucket => $value) {

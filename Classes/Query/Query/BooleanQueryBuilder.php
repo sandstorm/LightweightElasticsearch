@@ -21,6 +21,9 @@ class BooleanQueryBuilder implements ProtectedContextAwareInterface, SearchQuery
         return new self();
     }
 
+    /**
+     * @var array<string,array<mixed>>
+     */
     private array $query = [
         'bool' => []
     ];
@@ -81,6 +84,9 @@ class BooleanQueryBuilder implements ProtectedContextAwareInterface, SearchQuery
         return true;
     }
 
+    /**
+     * @return array<mixed>
+     */
     public function buildQuery(): array
     {
         return $this->query;

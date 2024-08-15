@@ -3,7 +3,7 @@
 namespace Sandstorm\LightweightElasticsearch\Factory;
 
 use A\B;
-use Neos\ContentRepository\Core\Factory\ContentRepositoryId;
+use Neos\ContentRepository\Core\SharedModel\ContentRepository\ContentRepositoryId;
 use Neos\ContentRepositoryRegistry\ContentRepositoryRegistry;
 use Neos\Eel\CompilingEvaluator;
 use Neos\Flow\Annotations as Flow;
@@ -29,6 +29,9 @@ use Sandstorm\LightweightElasticsearch\Settings\ElasticsearchSettings;
 #[Flow\Scope("singleton")]
 class ElasticsearchFactory
 {
+    /**
+     * @var array<string,mixed>
+     */
     #[Flow\InjectConfiguration(package: 'Sandstorm.LightweightElasticsearch')]
     protected array $settings;
 
@@ -39,10 +42,12 @@ class ElasticsearchFactory
     ) {
     }
 
+    /**
+     * @param array<mixed> $settings
+     */
     public function injectSettings(array $settings): void
     {
         $this->settings = $settings;
-
     }
 
     private function buildElasticsearchApiClient(ElasticsearchSettings $settings): ElasticsearchApiClient

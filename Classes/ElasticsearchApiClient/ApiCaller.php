@@ -41,7 +41,7 @@ class ApiCaller
     /**
      * @internal
      */
-    public function initializeRequestEngine(ElasticsearchSettings $settings)
+    public function initializeRequestEngine(ElasticsearchSettings $settings): void
     {
         $requestEngine = new CurlEngine();
         $requestEngine->setOption(CURLOPT_TIMEOUT, $settings->transferConnectionTimeout);
@@ -50,7 +50,7 @@ class ApiCaller
         $this->browser->setRequestEngine($requestEngine);
     }
 
-    public function request($method, UriInterface $url, string $content = null): ResponseInterface
+    public function request(string $method, UriInterface $url, string $content = null): ResponseInterface
     {
         $request = $this->requestFactory->createServerRequest($method, $url);
         $request = $request->withHeader('Content-Type', 'application/json');
