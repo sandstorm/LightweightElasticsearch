@@ -7,8 +7,9 @@ use Sandstorm\LightweightElasticsearch\SharedModel\ElasticsearchBaseUrl;
 
 class SystemApiCalls
 {
-
-
+    /**
+     * @return array<mixed>
+     */
     public function stats(ApiCaller $apiCaller, ElasticsearchBaseUrl $baseUrl): array
     {
         $response = $apiCaller->request('GET', $baseUrl->withPathSegment('_stats'));

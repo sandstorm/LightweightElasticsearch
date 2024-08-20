@@ -1,35 +1,40 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Sandstorm\LightweightElasticsearch\SharedModel;
 
-
-use Traversable;
-
-final class IndexNames implements \IteratorAggregate
+/**
+ * @implements \IteratorAggregate<IndexName>
+ */
+final readonly class IndexNames implements \IteratorAggregate
 {
-    private function __construct(
-        /**
-         * @var IndexName[]
-         */
-        public readonly array $names
-    ) {
-    }
+    /**
+     * @var array<IndexName>
+     */
+    private array $items;
 
-    public static function fromArray(array $indices)
+    private function __construct(IndexName ...$items)
     {
-        $names = [];
-        foreach ($indices as $indexName) {
-            $names[] = IndexName::fromString($indexName);
-        }
-
-        return new self($names);
+        $this->items = $items;
     }
 
     /**
-     * @return Traversable<IndexName>
+     * @param array<string> $indexNames
      */
-    public function getIterator(): Traversable
+    public static function fromArray(array $indexNames): self
     {
-        return new \ArrayIterator($this->names);
+        return new self(...array_map(
+            fn (string $indexName) => IndexName::fromString($indexName),
+            $indexNames
+        ));
+    }
+
+    /**
+     * @return \Traversable<IndexName>
+     */
+    public function getIterator(): \Traversable
+    {
+        yield from $this->items;
     }
 }

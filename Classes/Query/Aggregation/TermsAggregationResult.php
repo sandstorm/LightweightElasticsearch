@@ -24,21 +24,34 @@ use Neos\Flow\Annotations as Flow;
 #[Flow\Proxy(false)]
 class TermsAggregationResult implements AggregationResultInterface, ProtectedContextAwareInterface
 {
+    /**
+     * @var array<mixed>
+     */
     private array $aggregationResponse;
     private TermsAggregationBuilder $termsAggregationBuilder;
 
+    /**
+     * @param array<mixed> $aggregationResponse
+     */
     private function __construct(array $aggregationResponse, TermsAggregationBuilder $aggregationRequestBuilder)
     {
         $this->aggregationResponse = $aggregationResponse;
         $this->termsAggregationBuilder = $aggregationRequestBuilder;
     }
 
+    /**
+     * @param array<mixed> $aggregationResponse
+     */
     public static function create(array $aggregationResponse, TermsAggregationBuilder $aggregationRequestBuilder): self
     {
         return new self($aggregationResponse, $aggregationRequestBuilder);
     }
 
-    public function getBuckets() {
+    /**
+     * @return array<mixed>
+     */
+    public function getBuckets(): array
+    {
         return $this->aggregationResponse['buckets'];
     }
 

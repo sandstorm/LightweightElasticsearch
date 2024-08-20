@@ -9,9 +9,19 @@ namespace Sandstorm\LightweightElasticsearch\Settings;
  */
 class CreateIndexParameters implements \JsonSerializable
 {
-
+    /**
+     * @var array<mixed>
+     */
     private array $settings = [];
+
+    /**
+     * @var array<mixed>
+     */
     private array $aliases = [];
+
+    /**
+     * @var array<mixed>
+     */
     private array $mappings = [];
 
     public function jsonSerialize(): mixed

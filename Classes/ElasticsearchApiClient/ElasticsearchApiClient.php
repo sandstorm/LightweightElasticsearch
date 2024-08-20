@@ -23,17 +23,17 @@ use Sandstorm\LightweightElasticsearch\SharedModel\MappingDefinition;
  * @internal only called from within the indexing / search process.
  */
 #[Flow\Proxy(false)]
-class ElasticsearchApiClient
+readonly class ElasticsearchApiClient
 {
     public function __construct(
-        private readonly ElasticsearchBaseUrl $baseUrl,
-        private readonly ApiCaller $apiCaller,
-        private readonly AliasApiCalls $aliasApi,
-        private readonly IndexApiCalls $indexApi,
-        private readonly BulkApiCalls $bulkApi,
-        private readonly IngestPipelineApiCalls $ingestPipelineApi,
-        private readonly SearchApiCalls $searchApi,
-        private readonly SystemApiCalls $systemApi,
+        private ElasticsearchBaseUrl $baseUrl,
+        private ApiCaller $apiCaller,
+        private AliasApiCalls $aliasApi,
+        private IndexApiCalls $indexApi,
+        private BulkApiCalls $bulkApi,
+        private IngestPipelineApiCalls $ingestPipelineApi,
+        private SearchApiCalls $searchApi,
+        private SystemApiCalls $systemApi,
     ) {
     }
 
@@ -57,6 +57,9 @@ class ElasticsearchApiClient
         $this->indexApi->updateMapping($this->apiCaller, $this->baseUrl, $indexName, $mappingDefinition);
     }
 
+    /**
+     * @param array<mixed> $payloadLines
+     */
     public function bulkIndex(IndexName $indexName, array $payloadLines): void
     {
         $this->bulkApi->bulkIndex($this->apiCaller, $this->baseUrl, $indexName, $payloadLines);
@@ -71,9 +74,9 @@ class ElasticsearchApiClient
     }
 
     /**
-     * @param array $aliasNames
-     * @param array $searchRequest
-     * @return array
+     * @param array<mixed> $aliasNames
+     * @param array<mixed> $searchRequest
+     * @return array<mixed>
      */
     public function search(array $aliasNames, array $searchRequest): array
     {
@@ -101,6 +104,10 @@ class ElasticsearchApiClient
         $this->aliasApi->updateAliases($this->apiCaller, $this->baseUrl, $actions);
     }
 
+    /**
+     * @param array<mixed> $request
+     * @return array<mixed>
+     */
     public function ingestPipelineSimulate(array $request): array
     {
         return $this->ingestPipelineApi->simulate($this->apiCaller, $this->baseUrl, $request);

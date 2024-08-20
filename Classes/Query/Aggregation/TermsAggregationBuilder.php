@@ -37,6 +37,9 @@ class TermsAggregationBuilder implements AggregationBuilderInterface, SearchQuer
         $this->selectedValue = $selectedValue;
     }
 
+    /**
+     * @return array<string,mixed>
+     */
     public function buildAggregationRequest(): array
     {
         // This is a Terms aggregation, with the field name specified by the user.
@@ -47,11 +50,17 @@ class TermsAggregationBuilder implements AggregationBuilderInterface, SearchQuer
         ];
     }
 
+    /**
+     * @param array<mixed> $aggregationResponse
+     */
     public function bindResponse(array $aggregationResponse): AggregationResultInterface
     {
         return TermsAggregationResult::create($aggregationResponse, $this);
     }
 
+    /**
+     * @return array<mixed>
+     */
     public function buildQuery(): array
     {
         // for implementing faceting, we build the restriction query here

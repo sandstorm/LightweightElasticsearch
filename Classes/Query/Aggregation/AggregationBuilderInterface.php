@@ -12,7 +12,7 @@ interface AggregationBuilderInterface
      *
      * Is called by the framework (usually inside {@see AggregationRequestBuilder}, not by the end-user.
      *
-     * @return array
+     * @return array<mixed>
      */
     public function buildAggregationRequest(): array;
 
@@ -22,8 +22,7 @@ interface AggregationBuilderInterface
      *
      * Is called by the framework (usually inside {@see AggregationRequestBuilder}, not by the end-user.
      *
-     * @param array $aggregationResponse
-     * @return AggregationResultInterface
+     * @param array<mixed> $aggregationResponse
      */
     public function bindResponse(array $aggregationResponse): AggregationResultInterface;
 

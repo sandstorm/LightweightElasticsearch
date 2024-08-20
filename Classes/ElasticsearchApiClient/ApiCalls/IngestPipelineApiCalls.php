@@ -7,6 +7,10 @@ use Sandstorm\LightweightElasticsearch\SharedModel\ElasticsearchBaseUrl;
 
 class IngestPipelineApiCalls
 {
+    /**
+     * @param array<mixed> $request
+     * @return array<mixed>
+     */
     public function simulate(ApiCaller $apiCaller, ElasticsearchBaseUrl $baseUrl, array $request): array
     {
         $response = $apiCaller->request('POST', $baseUrl->withPathSegment('_ingest/pipeline/_simulate'), json_encode($request));

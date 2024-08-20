@@ -19,11 +19,9 @@ class NeosFulltextQueryBuilder implements SearchQueryBuilderInterface, Protected
 {
     protected BooleanQueryBuilder $boolQuery;
 
-    public static function create(Node $contextNode, ContentRepositoryRegistry $contentRepositoryRegistry): self
+    public static function create(Node $contextNode): self
     {
-        $contentRepository = $contentRepositoryRegistry->get($contextNode->subgraphIdentity->contentRepositoryId);
-        $workspace = $contentRepository->getWorkspaceFinder()->findOneByCurrentContentStreamId($contextNode->subgraphIdentity->contentStreamId);
-        return new self($contextNode, $workspace?->workspaceName);
+        return new self($contextNode, $contextNode->workspaceName);
     }
 
     private function __construct(Node $contextNode, ?WorkspaceName $workspaceName)
@@ -35,12 +33,12 @@ class NeosFulltextQueryBuilder implements SearchQueryBuilderInterface, Protected
             // another term filter against the path allows the context node itself to be found
             ->filter(
                 BooleanQueryBuilder::create()
-                    ->should(TermQueryBuilder::create('neos_ancestor_ids', $contextNode->nodeAggregateId->value))
-                    ->should(TermQueryBuilder::create('neos_nodeaggregateid', $contextNode->nodeAggregateId->value))
+                    ->should(TermQueryBuilder::create('neos_ancestor_ids', $contextNode->aggregateId->value))
+                    ->should(TermQueryBuilder::create('neos_nodeaggregateid', $contextNode->aggregateId->value))
             )
             ->filter(
             // http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-dsl-terms-filter.html
-                TermsQueryBuilder::create('neos_workspace', [$workspaceName->value])
+                TermsQueryBuilder::create('neos_workspace', [$workspaceName?->value])
             );
     }
 
@@ -79,6 +77,9 @@ class NeosFulltextQueryBuilder implements SearchQueryBuilderInterface, Protected
         return $this;
     }
 
+    /**
+     * @return array<mixed>
+     */
     public function buildQuery(): array
     {
         return $this->boolQuery->buildQuery();

@@ -8,6 +8,9 @@ use Sandstorm\LightweightElasticsearch\SharedModel\IndexName;
 
 class BulkApiCalls
 {
+    /**
+     * @param array<mixed> $payloadLines
+     */
     public function bulkIndex(ApiCaller $apiCaller, ElasticsearchBaseUrl $baseUrl, IndexName $indexName, array $payloadLines): void
     {
         if (count($payloadLines) === 0) {

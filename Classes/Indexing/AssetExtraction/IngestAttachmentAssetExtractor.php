@@ -104,7 +104,7 @@ class IngestAttachmentAssetExtractor implements AssetExtractorInterface
 
 
     /**
-     * @param array|null $extractedAsset
+     * @param array<string,mixed>|null $extractedAsset
      * @return AssetContent
      */
     protected function buildAssetContentObject(?array $extractedAsset): AssetContent

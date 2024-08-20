@@ -5,7 +5,6 @@ namespace Sandstorm\LightweightElasticsearch\Query;
 
 use Neos\ContentRepository\Core\Projection\ContentGraph\Node;
 use Neos\ContentRepository\Core\SharedModel\Workspace\WorkspaceName;
-use Neos\ContentRepositoryRegistry\ContentRepositoryRegistry;
 use Neos\Eel\ProtectedContextAwareInterface;
 use Neos\Flow\Annotations as Flow;
 use Neos\Flow\Log\ThrowableStorageInterface;
@@ -25,19 +24,18 @@ abstract class AbstractSearchRequestBuilder implements ProtectedContextAwareInte
 
     protected bool $logThisQuery = false;
 
-    protected string $logMessage;
+    protected ?string $logMessage;
     private WorkspaceName $workspaceName;
 
+    /**
+     * @param array<mixed> $additionalAliases
+     */
     public function __construct(
-        protected readonly ContentRepositoryRegistry $contentRepositoryRegistry,
         protected readonly Elasticsearch $elasticsearch,
         protected readonly Node|null $contextNode = null,
         protected readonly array $additionalAliases = [],
-
     ) {
-        $contentRepository = $this->contentRepositoryRegistry->get($this->contextNode->subgraphIdentity->contentRepositoryId);
-        $workspace = $contentRepository->getWorkspaceFinder()->findOneByCurrentContentStreamId($this->contextNode->subgraphIdentity->contentStreamId);
-        $this->workspaceName = $workspace->workspaceName;
+        $this->workspaceName = $this->contextNode?->workspaceName ?: WorkspaceName::forLive();
         foreach ($this->additionalAliases as $alias) {
             if (!$alias instanceof AliasName) {
                 throw new \RuntimeException('alias is no AliasName, but ' . get_class($alias), 1693488463);
@@ -64,6 +62,9 @@ abstract class AbstractSearchRequestBuilder implements ProtectedContextAwareInte
      *
      * You can call this method multiple times; and the request is only executed at the first time; and cached
      * for later use
+     *
+     * @param array<mixed> $request
+     * @return array<mixed>
      */
     protected function executeInternal(array $request): array
     {
@@ -74,9 +75,9 @@ abstract class AbstractSearchRequestBuilder implements ProtectedContextAwareInte
             if ($this->contextNode !== null) {
                 $aliasNames[] = AliasName::createForWorkspaceAndDimensionSpacePoint(
                     $this->elasticsearch->settings->nodeIndexNamePrefix,
-                    $this->contextNode->subgraphIdentity->contentRepositoryId,
+                    $this->contextNode->contentRepositoryId,
                     $this->workspaceName,
-                    $this->contextNode->subgraphIdentity->dimensionSpacePoint,
+                    $this->contextNode->dimensionSpacePoint,
                 );
             }
 

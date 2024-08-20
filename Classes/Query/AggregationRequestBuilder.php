@@ -26,6 +26,9 @@ class AggregationRequestBuilder extends AbstractSearchRequestBuilder
     // this builder can only run a single aggregation; so we can hardcode the aggregation name.
     private const AGGREGATION_NAME = 'innerAggregation';
 
+    /**
+     * @var array<string,mixed>
+     */
     protected array $request = [
         // we do not need any results returned, as we are only interested in the aggregations
         'size' => 0,
@@ -112,6 +115,9 @@ class AggregationRequestBuilder extends AbstractSearchRequestBuilder
         return $this->aggregationResult;
     }
 
+    /**
+     * @return array<mixed>
+     */
     private function prepareRequest(): array
     {
         $request = $this->request;
@@ -129,7 +135,7 @@ class AggregationRequestBuilder extends AbstractSearchRequestBuilder
     /**
      * Returns the full request as it is sent to Elasticsearch; useful for debugging purposes.
      *
-     * @return array
+     * @return array<mixed>
      */
     public function requestForDebugging(): array
     {

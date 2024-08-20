@@ -15,6 +15,16 @@
             "Sandstorm\\LightweightElasticsearch\\": "Classes/"
         }
     },
+    "scripts": {
+        "lint:phpstan": "phpstan analyse",
+        "lint:php": [
+            "@lint:phpcs",
+            "@lint:phpstan"
+        ],
+        "lint": [
+            "@lint:php"
+        ]
+    },
     "extra": {
         "neos": {
             "package-key": "Sandstorm.LightweightElasticsearch"

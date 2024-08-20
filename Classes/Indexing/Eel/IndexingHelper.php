@@ -21,6 +21,7 @@ use Neos\Eel\ProtectedContextAwareInterface;
 use Neos\Flow\Log\Utility\LogEnvironment;
 use Neos\Media\Domain\Model\AssetInterface;
 use Psr\Log\LoggerInterface;
+use Sandstorm\LightweightElasticsearch\Elasticsearch;
 use Sandstorm\LightweightElasticsearch\Indexing\AssetExtraction\AssetExtractorInterface;
 
 /**
@@ -29,7 +30,7 @@ use Sandstorm\LightweightElasticsearch\Indexing\AssetExtraction\AssetExtractorIn
 class IndexingHelper implements ProtectedContextAwareInterface
 {
     // WORKAROUND: set by {@see IndexingEelEvaluator} to ensure the current Elasticsearch entry point instance exists here.
-    public static \Sandstorm\LightweightElasticsearch\Elasticsearch $elasticsearch;
+    public static Elasticsearch $elasticsearch;
 
     #[Flow\Inject]
     protected AssetExtractorInterface $assetExtractor;
@@ -42,11 +43,7 @@ class IndexingHelper implements ProtectedContextAwareInterface
 
     public function workspaceNameForNode(Node $node): string
     {
-        $contentRepository = $this->contentRepositoryRegistry->get($node->subgraphIdentity->contentRepositoryId);
-        $workspace = $contentRepository->getWorkspaceFinder()->findOneByCurrentContentStreamId($node->subgraphIdentity->contentStreamId);
-
-        return $workspace->workspaceName->value;
-
+        return $node->workspaceName->value;
     }
 
     /**
@@ -66,8 +63,7 @@ class IndexingHelper implements ProtectedContextAwareInterface
      * Recursive function for fetching all node type names
      *
      * @param NodeType $nodeType
-     * @param array $nodeTypeNames
-     * @return void
+     * @param array<string,string> $nodeTypeNames
      */
     protected function extractNodeTypeNamesAndSupertypesInternal(NodeType $nodeType, array &$nodeTypeNames): void
     {
@@ -80,10 +76,10 @@ class IndexingHelper implements ProtectedContextAwareInterface
     /**
      * Convert an array of nodes to an array of node identifiers
      *
-     * @param array<Node> $nodes
-     * @return array
+     * @param iterable<Node> $nodes
+     * @return array<mixed>
      */
-    public function convertArrayOfNodesToArrayOfNodeIdentifiers($nodes): array
+    public function convertArrayOfNodesToArrayOfNodeIdentifiers(iterable $nodes): array
     {
         if (!is_array($nodes) && !$nodes instanceof \Traversable) {
             return [];
@@ -91,7 +87,7 @@ class IndexingHelper implements ProtectedContextAwareInterface
         $nodeIdentifiers = [];
         foreach ($nodes as $node) {
             assert($node instanceof  Node);
-            $nodeIdentifiers[] = $node->nodeAggregateId->value;
+            $nodeIdentifiers[] = $node->aggregateId->value;
         }
 
         return $nodeIdentifiers;
@@ -100,11 +96,11 @@ class IndexingHelper implements ProtectedContextAwareInterface
     /**
      * Convert an array of nodes to an array of node property
      *
-     * @param array<Node> $nodes
+     * @param iterable<Node> $nodes
      * @param string $propertyName
      * @return array
      */
-    public function convertArrayOfNodesToArrayOfNodeProperty($nodes, string $propertyName): array
+    public function convertArrayOfNodesToArrayOfNodeProperty(iterable $nodes, string $propertyName): array
     {
         if (!is_array($nodes) && !$nodes instanceof \Traversable) {
             return [];
@@ -119,10 +115,9 @@ class IndexingHelper implements ProtectedContextAwareInterface
 
     /**
      *
-     * @param $string
-     * @return array
+     * @return array<mixed>
      */
-    public function extractHtmlTags($string): array
+    public function extractHtmlTags(string $string): array
     {
         if (!$string || trim($string) === "") {
             return [];
@@ -168,11 +163,9 @@ class IndexingHelper implements ProtectedContextAwareInterface
     }
 
     /**
-     * @param string $bucketName
-     * @param string $string
-     * @return array
+     * @return array<mixed>
      */
-    public function extractInto(string $bucketName, $string): array
+    public function extractInto(string $bucketName, string|int|float $string): array
     {
         return [
             $bucketName => (string)$string
@@ -184,7 +177,7 @@ class IndexingHelper implements ProtectedContextAwareInterface
      *
      * @param AssetInterface|AssetInterface[]|null $value
      * @param string $field
-     * @return array|string|null
+     * @return array<mixed>|string|null
      */
     public function extractAssetContent(mixed $value, string $field = 'content'): array|null|string
     {

@@ -11,20 +11,21 @@ use Sandstorm\LightweightElasticsearch\SharedModel\MappingDefinition;
  * This is a part of {@see NodeTypeSearchSettings}.
  */
 #[Flow\Proxy(false)]
-class PropertySearchSettings
+readonly class PropertySearchSettings
 {
     private function __construct(
-        public readonly string $propertyName,
-        public readonly string|null $propertyType,
-
-        public readonly string|false $indexingEelExpression,
-        public readonly string|false $fulltextExtractorEelExpression,
-        public readonly MappingDefinition|null $elasticsearchMapping
+        public string $propertyName,
+        public string|null $propertyType,
+        public string|false $indexingEelExpression,
+        public string|false $fulltextExtractorEelExpression,
+        public MappingDefinition|null $elasticsearchMapping
     ) {
     }
 
     /**
      * @internal only called in {@see NodeTypeSearchSettings}
+     *
+     * @param array<string,mixed> $propertyConfiguration
      */
     public static function fromNodeTypeConfiguration(string $propertyName, array $propertyConfiguration, DefaultConfigurationPerType $defaultConfigurationPerType): self
     {
