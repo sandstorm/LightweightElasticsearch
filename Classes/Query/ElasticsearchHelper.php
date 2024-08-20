@@ -22,6 +22,7 @@ use Sandstorm\LightweightElasticsearch\Query\Highlight\NeosFulltextHighlightBuil
 use Sandstorm\LightweightElasticsearch\Query\Query\BooleanQueryBuilder;
 use Sandstorm\LightweightElasticsearch\Query\Query\NeosFulltextQueryBuilder;
 use Sandstorm\LightweightElasticsearch\Query\Query\TermQueryBuilder;
+use Sandstorm\LightweightElasticsearch\Query\Query\TermsQueryBuilder;
 
 /**
  * Eel Helper to write search queries.
@@ -64,6 +65,11 @@ class ElasticsearchHelper implements ProtectedContextAwareInterface
     public function createTermQuery(string $fieldName, $value): TermQueryBuilder
     {
         return TermQueryBuilder::create($fieldName, $value);
+    }
+
+    public function createTermsQuery(string $fieldName, array $values): TermsQueryBuilder
+    {
+        return TermsQueryBuilder::create($fieldName, $values);
     }
 
     public function createAggregationRequest(NodeInterface $contextNode = null, array $additionalIndices = []): AggregationRequestBuilder
