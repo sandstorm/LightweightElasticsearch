@@ -18,6 +18,9 @@ use Sandstorm\LightweightElasticsearch\Query\SearchRequestBuilder;
 #[Flow\Proxy(false)]
 class SearchResult implements \IteratorAggregate, ProtectedContextAwareInterface, \Countable
 {
+    #[Flow\Inject]
+    protected ContentRepositoryRegistry $contentRepositoryRegistry;
+
     /**
      * DO NOT CALL THIS DIRECTLY; only to be called from {@see SearchRequestBuilder::execute()}
      *
@@ -45,8 +48,7 @@ class SearchResult implements \IteratorAggregate, ProtectedContextAwareInterface
     private function __construct(
         private readonly array $response,
         private readonly bool $isError,
-        private readonly Node|null $contextNode = null,
-        private readonly ContentRepositoryRegistry|null $contentRepositoryRegistry = null,
+        private readonly Node|null $contextNode = null
     ) {
     }
 
