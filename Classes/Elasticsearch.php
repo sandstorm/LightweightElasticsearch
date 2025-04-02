@@ -103,7 +103,7 @@ class Elasticsearch
 
             // 2) Index nodes
             $this->logger->info('Dimension space point: ' . $dimensionSpacePoint->toJson() . ' -> Indexing nodes into: ' . $indexName->value);
-            $subgraph = $this->contentRepository->getContentGraph($workspaceName)->getSubgraph($dimensionSpacePoint, VisibilityConstraints::frontend());
+            $subgraph = $this->contentRepository->getContentGraph($workspaceName)->getSubgraph($dimensionSpacePoint, VisibilityConstraints::default());
             $this->documentIndexer->indexSubgraph($subgraph, $workspaceName, $indexName, $this);
 
             // 3) Create/switch alias

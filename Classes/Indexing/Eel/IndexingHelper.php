@@ -49,12 +49,19 @@ class IndexingHelper implements ProtectedContextAwareInterface
     /**
      * Returns an array of node type names including the passed $nodeType and all its supertypes, recursively
      *
-     * @param NodeType $nodeType
+     * @param Node $node
      * @return array<String>
      */
-    public function extractNodeTypeNamesAndSupertypes(NodeType $nodeType): array
+    public function extractNodeTypeNamesAndSupertypes(Node $node): array
     {
         $nodeTypeNames = [];
+        $nodeTypeManager = $this->contentRepositoryRegistry->get($node->contentRepositoryId)->getNodeTypeManager();
+        $nodeType = $nodeTypeManager->getNodeType($node->nodeTypeName);
+        if ($nodeType === null) {
+            $this->logger->error('Node type "' . $node->nodeTypeName . '" not found.', LogEnvironment::fromMethodName(__METHOD__));
+            return [];
+        }
+
         $this->extractNodeTypeNamesAndSupertypesInternal($nodeType, $nodeTypeNames);
         return array_values($nodeTypeNames);
     }
@@ -117,7 +124,7 @@ class IndexingHelper implements ProtectedContextAwareInterface
      *
      * @return array<mixed>
      */
-    public function extractHtmlTags(string $string): array
+    public function extractHtmlTags(?string $string): array
     {
         if (!$string || trim($string) === "") {
             return [];
@@ -165,9 +172,9 @@ class IndexingHelper implements ProtectedContextAwareInterface
     /**
      * @return array<mixed>
      */
-    public function extractInto(string $bucketName, string|int|float $string): array
+    public function extractInto(string $bucketName, string|int|float|null $string): array
     {
-        return [
+        return $string === null ? [] : [
             $bucketName => (string)$string
         ];
     }

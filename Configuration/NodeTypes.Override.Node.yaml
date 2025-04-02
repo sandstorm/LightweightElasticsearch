@@ -39,7 +39,7 @@
       search:
         elasticSearchMapping:
           type: keyword
-        indexing: '${Indexing.extractNodeTypeNamesAndSupertypes(node.nodeType)}'
+        indexing: '${Indexing.extractNodeTypeNamesAndSupertypes(node)}'
 
     'neos_last_modification_date_time':
       search:

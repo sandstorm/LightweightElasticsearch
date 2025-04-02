@@ -12,7 +12,6 @@ use Sandstorm\LightweightElasticsearch\ElasticsearchApiClient\ApiCalls\IngestPip
 use Sandstorm\LightweightElasticsearch\ElasticsearchApiClient\ApiCalls\SystemApiCalls;
 use Sandstorm\LightweightElasticsearch\Indexing\AliasManager;
 use Sandstorm\LightweightElasticsearch\Indexing\BulkRequestSenderFactory;
-use Sandstorm\LightweightElasticsearch\Indexing\CustomIndexer;
 use Sandstorm\LightweightElasticsearch\Indexing\CustomIndexerFactory;
 use Sandstorm\LightweightElasticsearch\Indexing\SubgraphIndexer;
 use Sandstorm\LightweightElasticsearch\Indexing\IndexingEelEvaluator;
@@ -35,8 +34,10 @@ class ElasticsearchFactory
     #[Flow\InjectConfiguration(package: 'Sandstorm.LightweightElasticsearch')]
     protected array $settings;
 
+    #[Flow\Inject]
+    protected ContentRepositoryRegistry $contentRepositoryRegistry;
+
     public function __construct(
-        private readonly ContentRepositoryRegistry $contentRepositoryRegistry,
         private readonly ApiCaller $apiCaller,
         private readonly CompilingEvaluator $eelEvaluator,
     ) {
@@ -93,7 +94,8 @@ class ElasticsearchFactory
                     $this->eelEvaluator,
                     $settings
                 ),
-                $settings
+                $settings,
+                $this->contentRepositoryRegistry
             ),
             aliasManager: $aliasManager,
             logger: $logger,

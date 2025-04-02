@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sandstorm\LightweightElasticsearch\Query\Result;
 
+use Neos\Flow\Annotations as Flow;
 use Neos\ContentRepository\Core\Projection\ContentGraph\Node;
 use Neos\ContentRepository\Core\SharedModel\Node\NodeAggregateId;
 use Neos\ContentRepositoryRegistry\ContentRepositoryRegistry;
@@ -11,13 +12,15 @@ use Neos\Eel\ProtectedContextAwareInterface;
 
 readonly class SearchResultDocument implements ProtectedContextAwareInterface
 {
+    #[Flow\Inject]
+    protected ContentRepositoryRegistry $contentRepositoryRegistry;
+
     /**
      * @param array<mixed> $hit
      */
     protected function __construct(
         private array $hit,
         private Node|null $contextNode = null,
-        private ContentRepositoryRegistry|null $contentRepositoryRegistry = null
     ) {
     }
 
