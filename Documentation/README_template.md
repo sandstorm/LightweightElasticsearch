@@ -67,9 +67,10 @@ The project has the following goals and limitations:
   This is an "artificial limitation" which could be removed; but we do not provide support for this removal
   right now.
 
-- **Only support for a single Elasticsearch version**
+- **Supported Elasticsearch versions**
 
-  We only support Elasticsearch 7 right now.
+  Elasticsearch 7.17 and 8.x are supported (tested with 7.17.28 and 8.19.23 together with
+  Flowpack.ElasticSearch.ContentRepositoryAdaptor 8.5).
 
 - **Only index live the workspace**
 
@@ -86,8 +87,12 @@ The project has the following goals and limitations:
 ## Starting Elasticsearch for development
 
 ```bash
-docker run --rm --name neos7-es -p 9200:9200 -p 9300:9300 -e "discovery.type=single-node" docker.elastic.co/elasticsearch/elasticsearch:7.10.2
+docker run --rm --name neos-es8 -p 9200:9200 -p 9300:9300 -e "discovery.type=single-node" -e "xpack.security.enabled=false" docker.elastic.co/elasticsearch/elasticsearch:8.19.23
 ```
+
+Elasticsearch 8 enables security (TLS and authentication) by default. The command above disables it for local
+development. In production, keep security enabled and configure the credentials and TLS settings for the client
+in `Flowpack.ElasticSearch.clients`.
 
 ## Indexing
 

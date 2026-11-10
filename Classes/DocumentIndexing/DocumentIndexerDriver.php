@@ -78,7 +78,6 @@ class DocumentIndexerDriver extends AbstractIndexerDriver implements IndexerDriv
         return [
             [
                 'index' => [
-                    '_type' => '_doc',
                     '_id' => $document->getId(),
                     '_index' => $indexName
                 ]
